@@ -1025,6 +1025,74 @@ button:focus-visible { outline-offset: 1px; }
 }
 .team-field:focus { border-color: var(--accent); }
 .team-form-actions { display: flex; gap: 4px; margin-left: auto; }
+
+/* NAV COUNT BLOCKER */
+.nav-count-blocker { color: var(--bad) !important; font-weight: 600; }
+
+/* BLOCKER CARD */
+.blocker-card {
+  padding: 10px var(--pad-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+}
+.blocker-card-blocker { border-left: 3px solid var(--bad); background: var(--bad-soft); }
+.blocker-card-watch   { border-left: 3px solid var(--warn); background: var(--warn-soft); }
+
+/* BLOCKER ADD FORM */
+.blocker-add-form {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border: 1px dashed var(--border-2);
+  border-radius: var(--radius); background: var(--panel);
+  margin-bottom: 4px;
+}
+.blocker-desc-input {
+  width: 100%; border: 1px solid var(--border-2); border-radius: var(--radius);
+  padding: 6px 10px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none; resize: vertical;
+}
+.blocker-desc-input:focus { border-color: var(--accent); }
+
+/* STORE EDIT MODAL */
+.store-edit-modal { width: min(600px, 94vw); max-height: 88vh; }
+.store-edit-modal .flag-body { max-height: calc(88vh - 110px); overflow-y: auto; }
+
+/* TEAM MODAL */
+.team-modal { width: min(600px, 94vw); }
+.team-modal-body { padding: var(--pad-3) var(--pad-4); display: flex; flex-direction: column; gap: 8px; max-height: calc(80vh - 120px); overflow-y: auto; }
+.team-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.team-edit-row { display: flex; align-items: center; gap: 8px; padding: 8px var(--pad-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); }
+.team-edit-row.is-editing { border-color: var(--accent); background: var(--accent-soft); }
+.team-inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
+.team-new-form { padding: 10px; border: 1px dashed var(--border-2); border-radius: var(--radius); background: var(--panel); }
+.team-field { border: 1px solid var(--border-2); border-radius: var(--radius); height: 26px; padding: 0 8px; font: inherit; font-size: var(--t13); color: var(--fg); background: var(--bg); outline: none; min-width: 120px; flex: 1; }
+.team-field:focus { border-color: var(--accent); }
+.team-form-actions { display: flex; gap: 4px; margin-left: auto; }
+
+/* CONFIG BANNER */
+.config-banner { background: var(--warn-soft); color: oklch(0.38 0.1 75); border-bottom: 1px solid color-mix(in oklab, var(--warn) 30%, var(--border)); padding: 7px var(--pad-4); font-size: var(--t12); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.config-banner code { font-family: var(--font-mono); font-size: 91%; background: color-mix(in oklab, var(--warn) 15%, transparent); padding: 1px 5px; border-radius: 3px; }
+.config-banner-error { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in oklab, var(--bad) 30%, var(--border)); }
+[data-theme="dark"] .config-banner { color: oklch(0.82 0.14 75); }
+
+/* LOADING BAR */
+.loading-bar { height: 2px; background: var(--accent); animation: loadbar 1.2s ease-in-out infinite; position: sticky; top: 0; z-index: 10; border-radius: 1px; }
+@keyframes loadbar { 0% { width: 0; opacity: 1; } 70% { width: 90%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
+
+/* NEW TASK FORM */
+.new-task-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--border-2); border-radius: var(--radius); background: var(--bg-elev); margin-bottom: 4px; }
+.new-task-title { flex: 2; min-width: 180px; border: 1px solid var(--border-2); border-radius: var(--radius); height: 28px; padding: 0 10px; font: inherit; font-size: var(--t13); color: var(--fg); background: var(--bg); outline: none; }
+.new-task-title:focus { border-color: var(--accent); }
+.new-task-field { flex: 1; min-width: 100px; border: 1px solid var(--border-2); border-radius: var(--radius); height: 28px; padding: 0 10px; font: inherit; font-size: var(--t13); color: var(--fg); background: var(--bg); outline: none; }
+.new-task-field:focus { border-color: var(--accent); }
+
+/* TASK CARD ACTIONS */
+.task-card-actions { display: flex; gap: 4px; flex-wrap: wrap; padding-top: 6px; border-top: 1px dashed var(--border); margin-top: 2px; }
+.task-card-actions .btn { font-size: 10.5px; height: 20px; padding: 0 7px; }
+
+/* TOAST ERROR */
+.toast-error { background: var(--bad); }
+.toast-error svg { color: white; }
 </style>
 <script>
   window.__STOREOPS_CONFIG__ = {
@@ -1683,43 +1751,6 @@ const Icon = {
 // ============================================================
 // LEFT NAV
 // ============================================================
-function LeftNav({ stores = [], onAddStore }) {
-  return (
-    <nav className="leftnav">
-      <div className="leftnav-head">
-        <div className="brand">
-          <span className="brand-mark"></span>
-          <span className="brand-word">storeops</span>
-        </div>
-        <button className="iconbtn" title="Command menu (⌘K)"><Icon.search /></button>
-      </div>
-      <div className="nav-section-label">Stores <span className="nav-count mono">{stores.length}</span></div>
-      <ul className="nav-list nav-pinned" style={{flex:1, overflowY:"auto"}}>
-        {stores.map((s) => (
-          <li key={s.id} className={cx("nav-item nav-store", s.id === STORE.id && "is-active")}>
-            <Dot tone={s.health || "neutral"} />
-            <span className="mono nav-store-id">{s.id}</span>
-            <span className="nav-store-name">{s.name || s.retailer}</span>
-          </li>
-        ))}
-      </ul>
-      <div style={{padding:"8px 10px", borderTop:"1px solid var(--border)"}}>
-        <button className="btn ghost" style={{width:"100%", justifyContent:"center"}} onClick={onAddStore}>
-          <Icon.plus /> Add store
-        </button>
-      </div>
-      <div className="leftnav-foot">
-        <div className="me">
-          <span className="avatar mono">PS</span>
-          <div className="me-text">
-            <div>Priya Shah</div>
-            <div className="me-sub">Implementation · Acme</div>
-          </div>
-        </div>
-      </div>
-    </nav>);
-}
-
 // ============================================================
 // HEADER (breadcrumb, store id, track strip, snapshot row)
 // ============================================================
@@ -2705,11 +2736,33 @@ const SB = (() => {
       return req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.asc`);
     },
     async replaceTeam(storeId, members) {
-      // Delete all then re-insert
       await req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}`, { method: "DELETE", prefer: "return=minimal" });
       if (!members.length) return [];
       const rows = await req("/team_members", { method: "POST", body: members.map((m) => ({ ...m, store_id: storeId })) });
       return rows;
+    },
+    // Blockers
+    async getBlockers(storeId) {
+      return req(`/blockers?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.desc`);
+    },
+    async insertBlocker(row) {
+      const rows = await req("/blockers", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async resolveBlocker(id) {
+      return req(`/blockers?id=eq.${id}`, { method: "PATCH", body: { resolved: true, updated_at: new Date().toISOString() } });
+    },
+    // Resolve flag
+    async resolveFlag(id) {
+      return req(`/flags?id=eq.${id}`, { method: "PATCH", body: { resolved: true } });
+    },
+    // Task notes
+    async getTaskNotes(taskId) {
+      return req(`/task_notes?task_id=eq.${encodeURIComponent(taskId)}&order=created_at.desc`);
+    },
+    async insertTaskNote(row) {
+      const rows = await req("/task_notes", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
     },
   };
 })();
@@ -2724,6 +2777,10 @@ function dbRowToTask(r) {
 }
 function dbRowToFlag(r) {
   return { id: r.id, label: r.label, tone: r.tone, team: r.team, since: r.since || "—" };
+}
+function dbRowToBlocker(r) {
+  return { id: r.id, title: r.title, description: r.description, tone: r.tone,
+    team: r.team, taskId: r.task_id, resolved: r.resolved };
 }
 function rowToStore(r) {
   return {
@@ -2741,125 +2798,383 @@ function dbRowToFile(r) {
 }
 
 // ============================================================
-// TASKS — now accepts props from App
+// TASK DETAIL DRAWER
+// Open a task, see its notes, add notes, edit blocker status
 // ============================================================
-function Tasks({ tasks, onCreate, onStateChange }) {
-  const [newTitle, setNewTitle] = useState("");
-  const [newOwner, setNewOwner] = useState("");
-  const [newDue,   setNewDue]   = useState("");
+function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast }) {
+  const [notes, setNotes]     = useState([]);
+  const [noteText, setNoteText] = useState("");
+  const [loading, setLoading]  = useState(false);
+  const [tab, setTab]          = useState("notes");
+
+  useEffect(() => {
+    if (!open || !task) return;
+    setNotes([]); setNoteText(""); setTab("notes");
+    if (!SB.configured()) return;
+    setLoading(true);
+    SB.getTaskNotes(task.id)
+      .then((rows) => setNotes(rows || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [open, task]);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+
+  if (!open || !task) return null;
+
+  const postNote = async () => {
+    if (!noteText.trim()) return;
+    const now = new Date();
+    const t   = `${now.toLocaleString("en-US",{month:"short",day:"numeric"})} · ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    const optimistic = { id: Date.now(), who: "Priya Shah", body: noteText.trim(), created_at: new Date().toISOString(), t };
+    setNotes((ns) => [optimistic, ...ns]);
+    setNoteText("");
+    if (!SB.configured()) return;
+    try {
+      await SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: "Priya Shah", body: optimistic.body });
+    } catch (e) { flashToast("Note sync failed: " + e.message, true); }
+  };
+
+  const states = ["Open", "Waiting", "Done"];
+
+  return (
+    <div className="drawer-scrim" onMouseDown={onClose}>
+      <aside className="phase-drawer" onMouseDown={(e) => e.stopPropagation()}>
+        <header className="drawer-head">
+          <div className="drawer-crumb mono">
+            <span className="muted-tx">Task</span>
+            <Icon.chevR />
+            <span className="mono task-id">{task.id}</span>
+          </div>
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+
+        <div className="drawer-meta">
+          <p style={{margin:"0 0 8px",fontSize:"var(--t14)",fontWeight:500,color:"var(--fg)"}}>{task.title}</p>
+          <div className="drawer-meta-row">
+            <span className="meta-stat"><span className="meta-k">Owner</span> <span>{task.owner || "—"}</span></span>
+            <span className="meta-stat"><span className="meta-k">Due</span> <span className="mono">{task.due || "—"}</span></span>
+            <span className="meta-stat"><span className="meta-k">Status</span>
+              <span style={{display:"inline-flex",gap:4}}>
+                {states.map((s) => (
+                  <button key={s}
+                    className={cx("btn sm", task.state === s ? "primary" : "ghost")}
+                    onClick={() => onStateChange(task.id, s)}>{s}</button>
+                ))}
+              </span>
+            </span>
+          </div>
+          {task.flag && <div style={{marginTop:8}}><Pill tone="blocker">blocker</Pill></div>}
+        </div>
+
+        <div className="drawer-tabs">
+          {[{id:"notes",label:"Notes"},{id:"info",label:"Details"}].map((t) => (
+            <button key={t.id} className={cx("drawer-tab", tab===t.id && "is-active")} onClick={()=>setTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="drawer-body">
+          {tab === "notes" && (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div className="drawer-mini-composer">
+                <textarea rows={3} placeholder="Add a note to this task…"
+                  value={noteText} onChange={(e) => setNoteText(e.target.value)}
+                  onKeyDown={(e) => { if ((e.metaKey||e.ctrlKey) && e.key==="Enter") { e.preventDefault(); postNote(); } }}
+                />
+                <div className="drawer-comp-foot">
+                  <span className="muted-tx mono"><Kbd>⌘</Kbd>+<Kbd>↵</Kbd> post</span>
+                  <div className="grow" />
+                  <button className="btn primary" disabled={!noteText.trim()} onClick={postNote}><Icon.arrowU /> Post</button>
+                </div>
+              </div>
+              {loading && <div className="loading-bar" />}
+              {notes.length === 0 && !loading && (
+                <div className="drawer-empty">No notes yet. Add the first one above.</div>
+              )}
+              <ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:8}}>
+                {notes.map((n, i) => (
+                  <li key={n.id || i} style={{borderRadius:"var(--radius)",border:"1px solid var(--border)",background:"var(--bg-elev)",padding:"8px var(--pad-3)"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
+                      <span className="avatar avatar-xs mono">{(n.who||"?").split(" ").map(w=>w[0]).join("").slice(0,2)}</span>
+                      <span style={{color:"var(--fg-2)",fontWeight:500}}>{n.who}</span>
+                      <span>·</span>
+                      <span className="mono">{n.t || new Date(n.created_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span>
+                    </div>
+                    <div style={{fontSize:"var(--t13)",color:"var(--fg)",lineHeight:1.5}}>{n.body}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {tab === "info" && (
+            <dl className="kv" style={{marginTop:8}}>
+              <dt>Task ID</dt><dd className="mono">{task.id}</dd>
+              <dt>Title</dt><dd>{task.title}</dd>
+              <dt>Owner</dt><dd>{task.owner || "—"}</dd>
+              <dt>Due</dt><dd className="mono">{task.due || "—"}</dd>
+              <dt>State</dt><dd>{task.state}</dd>
+              <dt>Flag</dt><dd>{task.flag ? <Pill tone="blocker">{task.flag}</Pill> : <span className="muted-tx">none</span>}</dd>
+            </dl>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+// ============================================================
+// BLOCKERS PANEL
+// View all blockers, add new ones, resolve them, add notes
+// ============================================================
+function BlockersPanel({ blockers, onAdd, onResolve, storeId, flashToast }) {
+  const [adding, setAdding]   = useState(false);
+  const [form, setForm]       = useState({ title: "", description: "", tone: "blocker", team: "Implementation" });
+  const [filterTeam, setFilterTeam] = useState("all");
+  const teams = ["all", ...new Set(blockers.map((b) => b.team).filter(Boolean))];
+
+  const filtered = filterTeam === "all" ? blockers : blockers.filter((b) => b.team === filterTeam);
+  const open     = filtered.filter((b) => !b.resolved);
+  const resolved = filtered.filter((b) =>  b.resolved);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    onAdd({ ...form });
+    setForm({ title: "", description: "", tone: "blocker", team: "Implementation" });
+    setAdding(false);
+  };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <h3 style={{margin:0,fontSize:"var(--t14)",fontWeight:600}}>
+          Blockers <span className="muted-tx mono">{open.length} open</span>
+        </h3>
+        <div className="grow" />
+        {/* Sort by team */}
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {teams.map((t) => (
+            <button key={t} className={cx("chip", filterTeam===t && "is-on")} onClick={() => setFilterTeam(t)}>
+              {t === "all" ? "All teams" : t}
+            </button>
+          ))}
+        </div>
+        <button className="btn primary sm" onClick={() => setAdding((v) => !v)}>
+          <Icon.plus /> Add blocker
+        </button>
+      </div>
+
+      {adding && (
+        <form className="blocker-add-form" onSubmit={submit}>
+          <input className="new-task-title" placeholder="Blocker title *" autoFocus
+            value={form.title} onChange={(e) => setForm((f) => ({...f, title: e.target.value}))} />
+          <textarea className="blocker-desc-input" rows={2} placeholder="Description / context…"
+            value={form.description} onChange={(e) => setForm((f) => ({...f, description: e.target.value}))} />
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <div className="sev-seg">
+              {["blocker","watch"].map((s) => (
+                <button type="button" key={s} className={cx("sev-btn",`sev-${s}`,form.tone===s&&"is-on")} onClick={() => setForm((f) => ({...f, tone:s}))}>
+                  <Dot tone={s==="blocker"?"red":"yellow"} /> {s}
+                </button>
+              ))}
+            </div>
+            <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f) => ({...f, team:e.target.value}))}>
+              {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+            </select>
+            <div className="grow" />
+            <button type="button" className="btn ghost" onClick={() => setAdding(false)}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={!form.title.trim()}><Icon.flag /> Add</button>
+          </div>
+        </form>
+      )}
+
+      {open.length === 0 && !adding && (
+        <div className="drawer-empty">No open blockers. Click "Add blocker" to raise one.</div>
+      )}
+
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {open.map((b, i) => (
+          <div key={b.id || i} className={cx("blocker-card", `blocker-card-${b.tone}`)}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
+              <Dot tone={b.tone === "blocker" ? "red" : "yellow"} style={{marginTop:4,flexShrink:0}} />
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:500,fontSize:"var(--t13)",color:"var(--fg)"}}>{b.title}</div>
+                {b.description && <div style={{fontSize:"var(--t13)",color:"var(--fg-2)",marginTop:2,lineHeight:1.45}}>{b.description}</div>}
+                <div style={{display:"flex",gap:6,marginTop:6,alignItems:"center",flexWrap:"wrap"}}>
+                  {b.team && <span className="flag-team mono">{b.team}</span>}
+                  <Pill tone={b.tone}>{b.tone}</Pill>
+                </div>
+              </div>
+              <button className="btn ghost sm" onClick={() => onResolve(b.id)} style={{flexShrink:0}}>Resolve</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {resolved.length > 0 && (
+        <details style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
+          <summary style={{cursor:"pointer",userSelect:"none",marginBottom:6}}>{resolved.length} resolved</summary>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {resolved.map((b, i) => (
+              <div key={b.id || i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px var(--pad-3)",border:"1px solid var(--border)",borderRadius:"var(--radius)",opacity:0.6}}>
+                <Dot tone="neutral" />
+                <span style={{textDecoration:"line-through",fontSize:"var(--t13)"}}>{b.title}</span>
+                <span className="flag-team mono">{b.team}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// TASKS — full featured with drawer + blockers
+// ============================================================
+function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResolveBlocker, storeId, flashToast }) {
+  const [newTitle, setNewTitle]   = useState("");
+  const [newOwner, setNewOwner]   = useState("");
+  const [newDue,   setNewDue]     = useState("");
+  const [newFlag,  setNewFlag]    = useState(false);
+  const [activeTask, setActiveTask] = useState(null);
+  const [taskTab, setTaskTab]     = useState("kanban"); // kanban | blockers
+  const [sortTeam, setSortTeam]   = useState("all");
+
   const cols = [
     { id: "Open",    tone: "info" },
     { id: "Waiting", tone: "watch" },
     { id: "Done",    tone: "ok" },
   ];
 
+  const allOwners = ["all", ...new Set(tasks.map((t) => t.owner).filter(Boolean))];
+  const filtered  = sortTeam === "all" ? tasks : tasks.filter((t) => t.owner === sortTeam);
+
   const submit = (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    onCreate({ title: newTitle.trim(), owner: newOwner.trim(), due: newDue.trim() || "—" });
-    setNewTitle(""); setNewOwner(""); setNewDue("");
+    onCreate({ title: newTitle.trim(), owner: newOwner.trim(), due: newDue.trim() || "—", flag: newFlag ? "blocker" : null });
+    setNewTitle(""); setNewOwner(""); setNewDue(""); setNewFlag(false);
   };
 
   return (
     <div className="tasks">
-      <div className="tasks-head">
-        <h3>Tasks <span className="muted-tx mono">{tasks.length}</span></h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:2}}>
+          {[{id:"kanban",label:"Kanban"},{id:"blockers",label:`Blockers ${blockers.filter(b=>!b.resolved).length > 0 ? `(${blockers.filter(b=>!b.resolved).length})` : ""}`}].map((t) => (
+            <button key={t.id} className={cx("tab", taskTab===t.id && "is-active")} style={{height:30}} onClick={() => setTaskTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+        <div className="grow" />
+        {taskTab === "kanban" && (
+          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+            {allOwners.map((o) => (
+              <button key={o} className={cx("chip", sortTeam===o && "is-on")} onClick={() => setSortTeam(o)}>
+                {o === "all" ? "All" : o}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* New task form */}
-      <form className="new-task-form" onSubmit={submit}>
-        <input
-          className="new-task-title"
-          placeholder="New task title…"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-        />
-        <input
-          className="new-task-field"
-          placeholder="Owner"
-          value={newOwner}
-          onChange={(e) => setNewOwner(e.target.value)}
-        />
-        <input
-          className="new-task-field mono"
-          placeholder="Due date"
-          value={newDue}
-          onChange={(e) => setNewDue(e.target.value)}
-        />
-        <button className="btn primary" type="submit" disabled={!newTitle.trim()}>
-          <Icon.plus /> Add task
-        </button>
-      </form>
+      {taskTab === "kanban" && (
+        <>
+          <form className="new-task-form" onSubmit={submit}>
+            <input className="new-task-title" placeholder="New task title…" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+            <input className="new-task-field" placeholder="Owner" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} />
+            <input className="new-task-field mono" placeholder="Due date" value={newDue} onChange={(e) => setNewDue(e.target.value)} />
+            <label style={{display:"flex",alignItems:"center",gap:5,fontSize:"var(--t12)",color:"var(--fg-2)",cursor:"pointer",whiteSpace:"nowrap"}}>
+              <input type="checkbox" checked={newFlag} onChange={(e) => setNewFlag(e.target.checked)} />
+              Mark as blocker
+            </label>
+            <button className="btn primary" type="submit" disabled={!newTitle.trim()}><Icon.plus /> Add task</button>
+          </form>
 
-      <div className="task-cols">
-        {cols.map((c) => {
-          const items = tasks.filter((t) => t.state === c.id);
-          return (
-            <div key={c.id} className="task-col">
-              <div className="task-col-head">
-                <Dot tone={c.tone === "ok" ? "green" : c.tone === "watch" ? "yellow" : "neutral"} />
-                <span>{c.id}</span>
-                <span className="mono task-col-n">{items.length}</span>
-              </div>
-              {items.map((t) => (
-                <div key={t.id} className={cx("task-card", t.flag === "blocker" && "is-blocker")}>
-                  <div className="task-card-top">
-                    <span className="mono task-id">{t.id}</span>
-                    {t.flag && <Pill tone="blocker">blocker</Pill>}
+          <div className="task-cols">
+            {cols.map((c) => {
+              const items = filtered.filter((t) => t.state === c.id);
+              return (
+                <div key={c.id} className="task-col">
+                  <div className="task-col-head">
+                    <Dot tone={c.tone === "ok" ? "green" : c.tone === "watch" ? "yellow" : "neutral"} />
+                    <span>{c.id}</span>
+                    <span className="mono task-col-n">{items.length}</span>
                   </div>
-                  <div className="task-card-title">{t.title}</div>
-                  <div className="task-card-foot">
-                    <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map((s)=>s[0]).join("")}</span>
-                    <span className="muted-tx">{t.owner}</span>
-                    <div className="grow" />
-                    <span className="mono">{t.due}</span>
-                  </div>
-                  {/* State controls */}
-                  <div className="task-card-actions">
-                    {c.id !== "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Open")}>Open</button>}
-                    {c.id !== "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Waiting")}>Waiting</button>}
-                    {c.id !== "Done"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Done")}>Done</button>}
-                  </div>
+                  {items.map((t) => (
+                    <div key={t.id} className={cx("task-card", t.flag === "blocker" && "is-blocker")}
+                      onClick={() => setActiveTask(t)} style={{cursor:"pointer"}}>
+                      <div className="task-card-top">
+                        <span className="mono task-id">{t.id}</span>
+                        {t.flag && <Pill tone="blocker">blocker</Pill>}
+                      </div>
+                      <div className="task-card-title">{t.title}</div>
+                      <div className="task-card-foot">
+                        <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map((s)=>s[0]).join("")}</span>
+                        <span className="muted-tx">{t.owner}</span>
+                        <div className="grow" />
+                        <span className="mono">{t.due}</span>
+                      </div>
+                      <div className="task-card-actions" onClick={(e) => e.stopPropagation()}>
+                        {c.id !== "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>Open</button>}
+                        {c.id !== "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Waiting")}>Waiting</button>}
+                        {c.id !== "Done"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>Done</button>}
+                        <button className="btn ghost sm" onClick={() => setActiveTask(t)}><Icon.paper /> Notes</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {taskTab === "blockers" && (
+        <BlockersPanel
+          blockers={blockers} onAdd={onAddBlocker} onResolve={onResolveBlocker}
+          storeId={storeId} flashToast={flashToast}
+        />
+      )}
+
+      <TaskDrawer
+        task={activeTask} open={!!activeTask}
+        onClose={() => setActiveTask(null)}
+        onStateChange={onStateChange}
+        storeId={storeId} flashToast={flashToast}
+      />
     </div>
   );
 }
 
 // ============================================================
-// FILES — now accepts props from App
+// FILES
 // ============================================================
 function Files({ files, onUpload }) {
   const fileInputRef = useRef();
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) onUpload(file);
-    e.target.value = "";
-  };
-
   return (
     <div className="files">
       <div className="files-head">
         <h3>Files <span className="muted-tx mono">{files.length}</span></h3>
-        <button className="btn ghost sm" onClick={() => fileInputRef.current?.click()}>
-          <Icon.plus /> Upload
-        </button>
-        <input ref={fileInputRef} type="file" style={{display:"none"}} onChange={handleFileChange} />
+        <button className="btn ghost sm" onClick={() => fileInputRef.current?.click()}><Icon.plus /> Upload</button>
+        <input ref={fileInputRef} type="file" style={{display:"none"}} onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value=""; }} />
       </div>
       <table className="ftbl">
         <thead><tr>
-          <th style={{ width: "6%" }}>#</th>
-          <th>Name</th><th>Size</th><th>Uploaded by</th><th>When</th><th></th>
+          <th style={{width:"6%"}}>#</th><th>Name</th><th>Size</th><th>Uploaded by</th><th>When</th><th></th>
         </tr></thead>
         <tbody>
           {files.map((f, i) => (
             <tr key={f.id || f.name}>
-              <td className="mono muted-tx">{String(i + 1).padStart(2, "0")}</td>
+              <td className="mono muted-tx">{String(i+1).padStart(2,"0")}</td>
               <td><span className="ftbl-name"><Icon.paper /> {f.name}</span></td>
               <td className="mono">{f.size}</td>
               <td>{f.who}</td>
@@ -2874,33 +3189,451 @@ function Files({ files, onUpload }) {
 }
 
 // ============================================================
+// LEFT NAV — shows live counts, blockers, tasks, flags
+// ============================================================
+function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], onAddStore, onNavSelect, navView }) {
+  const openTasks    = allTasks.filter((t) => t.state !== "Done");
+  const openFlags    = allFlags.filter((f) => !f.resolved);
+  const openBlockers = allBlockers.filter((b) => !b.resolved);
+
+  const navItems = [
+    { id: "store",    label: "Store view",  count: null },
+    { id: "tasks",    label: "All tasks",   count: openTasks.length    || null },
+    { id: "flags",    label: "All flags",   count: openFlags.length    || null },
+    { id: "blockers", label: "All blockers",count: openBlockers.length || null },
+  ];
+
+  return (
+    <nav className="leftnav">
+      <div className="leftnav-head">
+        <div className="brand">
+          <span className="brand-mark"></span>
+          <span className="brand-word">storeops</span>
+        </div>
+      </div>
+
+      <div className="nav-section-label">Views</div>
+      <ul className="nav-list">
+        {navItems.map((item) => (
+          <li key={item.id} className={cx("nav-item", navView===item.id && "is-active")}
+            onClick={() => onNavSelect(item.id)}>
+            <span className="nav-label">{item.label}</span>
+            {item.count != null && item.count > 0 && (
+              <span className={cx("nav-count mono", item.id==="blockers" && "nav-count-blocker")}>{item.count}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <div className="nav-section-label">
+        Stores <span className="nav-count mono">{stores.length}</span>
+      </div>
+      <ul className="nav-list nav-pinned" style={{flex:1,overflowY:"auto"}}>
+        {stores.map((s) => (
+          <li key={s.id} className={cx("nav-item nav-store", s.id === STORE.id && "is-active")}
+            onClick={() => onNavSelect("store")}>
+            <Dot tone={s.health || "neutral"} />
+            <span className="mono nav-store-id">{s.id}</span>
+            <span className="nav-store-name">{s.name || s.retailer}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div style={{padding:"8px 10px",borderTop:"1px solid var(--border)"}}>
+        <button className="btn ghost" style={{width:"100%",justifyContent:"center"}} onClick={onAddStore}>
+          <Icon.plus /> Add store
+        </button>
+      </div>
+
+      <div className="leftnav-foot">
+        <div className="me">
+          <span className="avatar mono">PS</span>
+          <div className="me-text">
+            <div>Priya Shah</div>
+            <div className="me-sub">Implementation · Acme</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// ============================================================
+// GLOBAL TASKS VIEW — sortable list of all tasks
+// ============================================================
+function GlobalTasksView({ tasks, onStateChange, storeId, flashToast }) {
+  const [sortTeam, setSortTeam]   = useState("all");
+  const [sortState, setSortState] = useState("all");
+  const [activeTask, setActiveTask] = useState(null);
+
+  const owners = ["all", ...new Set(tasks.map((t) => t.owner).filter(Boolean))];
+  const states = ["all", "Open", "Waiting", "Done"];
+
+  const filtered = tasks
+    .filter((t) => sortTeam  === "all" || t.owner === sortTeam)
+    .filter((t) => sortState === "all" || t.state === sortState);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <h2 style={{margin:0,fontSize:"var(--t18)",fontWeight:600}}>All tasks</h2>
+        <span className="muted-tx mono">{filtered.length} of {tasks.length}</span>
+        <div className="grow" />
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {states.map((s) => (
+            <button key={s} className={cx("chip", sortState===s && "is-on")} onClick={() => setSortState(s)}>
+              {s === "all" ? "All states" : s}
+            </button>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {owners.map((o) => (
+            <button key={o} className={cx("chip", sortTeam===o && "is-on")} onClick={() => setSortTeam(o)}>
+              {o === "all" ? "All owners" : o}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",background:"var(--bg-elev)",overflow:"hidden"}}>
+        {filtered.length === 0 && <div className="drawer-empty">No tasks match this filter.</div>}
+        {filtered.map((t, i) => (
+          <div key={t.id} style={{
+            display:"grid",gridTemplateColumns:"60px 1fr auto auto auto",
+            alignItems:"center",gap:10,
+            padding:"8px var(--pad-3)",
+            borderBottom: i < filtered.length-1 ? "1px solid var(--border)" : "none",
+            cursor:"pointer",
+          }} onClick={() => setActiveTask(t)}>
+            <span className="mono task-id">{t.id}</span>
+            <div>
+              <div style={{fontSize:"var(--t13)",color:"var(--fg)"}}>{t.title}</div>
+              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{t.owner} · due {t.due}</div>
+            </div>
+            {t.flag && <Pill tone="blocker">blocker</Pill>}
+            <Pill tone={t.state==="Done"?"info":t.state==="Waiting"?"watch":"info"}>{t.state}</Pill>
+            <div style={{display:"flex",gap:4}} onClick={(e)=>e.stopPropagation()}>
+              {t.state !== "Done" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>Done</button>}
+              {t.state === "Done" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>Reopen</button>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <TaskDrawer task={activeTask} open={!!activeTask} onClose={() => setActiveTask(null)}
+        onStateChange={onStateChange} storeId={storeId} flashToast={flashToast} />
+    </div>
+  );
+}
+
+// ============================================================
+// GLOBAL FLAGS VIEW
+// ============================================================
+function GlobalFlagsView({ flags, onResolve }) {
+  const [sortTeam, setSortTeam] = useState("all");
+  const teams = ["all", ...new Set(flags.map((f) => f.team).filter(Boolean))];
+  const filtered = sortTeam === "all" ? flags : flags.filter((f) => f.team === sortTeam);
+  const open = filtered.filter((f) => !f.resolved);
+  const resolved = filtered.filter((f) => f.resolved);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <h2 style={{margin:0,fontSize:"var(--t18)",fontWeight:600}}>All flags</h2>
+        <span className="muted-tx mono">{open.length} open</span>
+        <div className="grow" />
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {teams.map((t) => (
+            <button key={t} className={cx("chip", sortTeam===t && "is-on")} onClick={() => setSortTeam(t)}>
+              {t === "all" ? "All teams" : t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",background:"var(--bg-elev)",overflow:"hidden"}}>
+        {open.length === 0 && <div className="drawer-empty">No open flags.</div>}
+        {open.map((f, i) => (
+          <div key={f.id || i} style={{
+            display:"grid",gridTemplateColumns:"14px 1fr auto auto auto",
+            alignItems:"center",gap:10,
+            padding:"10px var(--pad-3)",
+            borderBottom: i < open.length-1 ? "1px solid var(--border)" : "none",
+          }}>
+            <Dot tone={f.tone} />
+            <div>
+              <div style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)"}}>{f.label}</div>
+              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{f.team} · {f.since}</div>
+            </div>
+            <Pill tone={f.tone}>{f.tone}</Pill>
+            <button className="btn ghost sm" onClick={() => onResolve && onResolve(f.id)}>Resolve</button>
+          </div>
+        ))}
+        {resolved.length > 0 && (
+          <details style={{padding:"8px var(--pad-3)",fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
+            <summary style={{cursor:"pointer",userSelect:"none"}}>{resolved.length} resolved</summary>
+          </details>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// GLOBAL BLOCKERS VIEW
+// ============================================================
+function GlobalBlockersView({ blockers, onAdd, onResolve, storeId, flashToast }) {
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <h2 style={{margin:0,fontSize:"var(--t18)",fontWeight:600}}>All blockers</h2>
+      <BlockersPanel blockers={blockers} onAdd={onAdd} onResolve={onResolve} storeId={storeId} flashToast={flashToast} />
+    </div>
+  );
+}
+
+// ============================================================
+// STORE EDIT MODAL
+// ============================================================
+function StoreEditModal({ store, open, onClose, onSave }) {
+  const [form, setForm] = useState(store);
+  useEffect(() => { if (open) setForm(store); }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key==="Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({...f, [k]: v}));
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <form className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><Icon.paper /><span>Edit store</span><span className="muted-tx mono">· {store.id}</span></div>
+          <div className="grow" /><span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+        <div className="flag-body">
+          {[["Store ID","id"],["Retailer","retailer"],["Store #","storeNum"],["Name","name"],["Address","address"],["Region","region"],["Owner person","ownerPerson"],["Next action","nextAction"],["Due","due"],["Sqft","sqft"],["Go-live","scheduledLive"]].map(([label,key]) => (
+            <label key={key} className="field">
+              <span className="field-l">{label}</span>
+              <input value={form[key]||""} onChange={(e) => set(key, e.target.value)} />
+            </label>
+          ))}
+          <div className="field">
+            <span className="field-l">Phase</span>
+            <select className="select-ish mono" value={form.phase} onChange={(e) => set("phase", e.target.value)}>
+              {["Planning","Scheduled","COI","Deployment","Live"].map((p) => <option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-l">Health</span>
+            <div className="sev-seg">
+              {["green","yellow","red"].map((v) => (
+                <button type="button" key={v} className={cx("sev-btn", form.health===v && "is-on")} onClick={() => set("health", v)}>
+                  <Dot tone={v} /> {v}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <span className="field-l">Owner team</span>
+            <select className="select-ish mono" value={form.owner} onChange={(e) => set("owner", e.target.value)}>
+              {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="flag-foot">
+          <div className="grow" />
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn primary"><Icon.check /> Save changes</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
+// ADD STORE MODAL
+// ============================================================
+function AddStoreModal({ open, onClose, onAdd }) {
+  const blank = { id:"", retailer:"", storeNum:"", name:"", address:"", region:"",
+    phase:"Planning", health:"green", owner:"Implementation", ownerPerson:"",
+    nextAction:"", due:"", sqft:"", scheduledLive:"", openedOn: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),
+    dueDelta:"", risk:"low", fixtureCount:0, skus:0, retailerCode:"" };
+  const [form, setForm] = useState(blank);
+  useEffect(() => { if (open) setForm(blank); }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key==="Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({...f, [k]: v}));
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <form className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()}
+        onSubmit={(e) => { e.preventDefault(); if (!form.id.trim()||!form.retailer.trim()) return; onAdd({...form,id:form.id.trim().toUpperCase()}); }}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><Icon.plus /><span>Add new store</span></div>
+          <div className="grow" /><span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+        <div className="flag-body">
+          <label className="field"><span className="field-l">Store ID *</span><input autoFocus value={form.id} onChange={(e) => set("id",e.target.value)} placeholder="e.g. WFM-1248" /></label>
+          <label className="field"><span className="field-l">Retailer *</span><input value={form.retailer} onChange={(e) => set("retailer",e.target.value)} placeholder="e.g. Whole Foods Market" /></label>
+          <label className="field"><span className="field-l">Store #</span><input value={form.storeNum} onChange={(e) => set("storeNum",e.target.value)} placeholder="e.g. 1248" /></label>
+          <label className="field"><span className="field-l">Name</span><input value={form.name} onChange={(e) => set("name",e.target.value)} placeholder="e.g. Boston — Back Bay" /></label>
+          <label className="field"><span className="field-l">Address</span><input value={form.address} onChange={(e) => set("address",e.target.value)} /></label>
+          <label className="field"><span className="field-l">Region</span><input value={form.region} onChange={(e) => set("region",e.target.value)} /></label>
+          <div className="field"><span className="field-l">Phase</span>
+            <select className="select-ish mono" value={form.phase} onChange={(e) => set("phase",e.target.value)}>
+              {["Planning","Scheduled","COI","Deployment","Live"].map((p) => <option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <label className="field"><span className="field-l">Owner person</span><input value={form.ownerPerson} onChange={(e) => set("ownerPerson",e.target.value)} /></label>
+          <label className="field"><span className="field-l">Go-live target</span><input className="mono" value={form.scheduledLive} onChange={(e) => set("scheduledLive",e.target.value)} placeholder="Jun 15, 2026" /></label>
+        </div>
+        <div className="flag-foot">
+          <span className="muted-tx mono">* required</span>
+          <div className="grow" />
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn primary" disabled={!form.id.trim()||!form.retailer.trim()}><Icon.plus /> Add store</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
+// TEAM MODAL
+// ============================================================
+function TeamModal({ open, onClose, team, onSave }) {
+  const [members, setMembers] = useState(team);
+  const [editIdx, setEditIdx] = useState(null);
+  const [form, setForm]       = useState(null);
+  useEffect(() => { if (open) { setMembers(team); setEditIdx(null); setForm(null); } }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key==="Escape") { if (editIdx!==null) { setEditIdx(null); setForm(null); } else onClose(); } };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose, editIdx]);
+  if (!open) return null;
+
+  const startEdit = (i) => { setEditIdx(i); setForm(i==="new" ? {name:"",role:"",team:"Implementation",load:"active",initials:"",since:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})} : {...members[i]}); };
+  const saveEdit  = () => {
+    if (!form.name.trim()) return;
+    const initials = form.initials.trim() || form.name.trim().split(" ").map((w)=>w[0]).join("").slice(0,2).toUpperCase();
+    const member = {...form, initials};
+    if (editIdx==="new") setMembers((m) => [...m, member]);
+    else setMembers((m) => m.map((x,i) => i===editIdx ? member : x));
+    setEditIdx(null); setForm(null);
+  };
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <div className="ai-modal team-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><span>Team members</span></div>
+          <div className="grow" /><button className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+        <div className="team-modal-body">
+          <ul className="team-edit-list">
+            {members.map((m, i) => (
+              <li key={i} className={cx("team-edit-row", editIdx===i && "is-editing")}>
+                {editIdx===i ? (
+                  <div className="team-inline-form">
+                    <input className="team-field" placeholder="Full name *" value={form.name} onChange={(e) => setForm((f)=>({...f,name:e.target.value}))} autoFocus />
+                    <input className="team-field" placeholder="Role / title" value={form.role} onChange={(e) => setForm((f)=>({...f,role:e.target.value}))} />
+                    <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f)=>({...f,team:e.target.value}))}>
+                      {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+                    </select>
+                    <select className="select-ish mono" value={form.load} onChange={(e) => setForm((f)=>({...f,load:e.target.value}))}>
+                      {["primary","active","watching"].map((l) => <option key={l}>{l}</option>)}
+                    </select>
+                    <div className="team-form-actions">
+                      <button className="btn primary sm" onClick={saveEdit} disabled={!form.name.trim()}><Icon.check /> Save</button>
+                      <button className="btn ghost sm" onClick={() => { setEditIdx(null); setForm(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="avatar avatar-sm mono">{m.initials}</span>
+                    <div className="contact-text">
+                      <div className="contact-name">{m.name}</div>
+                      <div className="contact-sub">{m.role} · {m.team}</div>
+                    </div>
+                    <Pill tone={m.load==="primary"?"watch":"info"}>{m.load}</Pill>
+                    <button className="btn ghost sm" onClick={() => startEdit(i)}>Edit</button>
+                    <button className="btn ghost sm" style={{color:"var(--bad)"}} onClick={() => setMembers((ms) => ms.filter((_,idx)=>idx!==i))}>Remove</button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+          {editIdx === "new" ? (
+            <div className="team-inline-form team-new-form">
+              <input className="team-field" placeholder="Full name *" value={form.name} onChange={(e) => setForm((f)=>({...f,name:e.target.value}))} autoFocus />
+              <input className="team-field" placeholder="Role / title" value={form.role} onChange={(e) => setForm((f)=>({...f,role:e.target.value}))} />
+              <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f)=>({...f,team:e.target.value}))}>
+                {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+              </select>
+              <select className="select-ish mono" value={form.load} onChange={(e) => setForm((f)=>({...f,load:e.target.value}))}>
+                {["primary","active","watching"].map((l) => <option key={l}>{l}</option>)}
+              </select>
+              <div className="team-form-actions">
+                <button className="btn primary sm" onClick={saveEdit} disabled={!form.name.trim()}><Icon.plus /> Add</button>
+                <button className="btn ghost sm" onClick={() => { setEditIdx(null); setForm(null); }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className="btn ghost" style={{marginTop:8}} onClick={() => startEdit("new")}><Icon.plus /> Add team member</button>
+          )}
+        </div>
+        <div className="flag-foot">
+          <span className="muted-tx mono">{members.length} members</span>
+          <div className="grow" />
+          <button className="btn ghost" onClick={onClose}>Cancel</button>
+          <button className="btn primary" onClick={() => onSave(members)}><Icon.check /> Save team</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // APP
 // ============================================================
 function App() {
   const [tweaks, setTweak] = useTweaks(window.__TWEAK_DEFAULTS__ || {});
-  const [tab, setTab]           = useState("overview");
-  const [aiOpen, setAiOpen]     = useState(false);
-  const [flagOpen, setFlagOpen] = useState(false);
+  const [tab, setTab]             = useState("overview");
+  const [navView, setNavView]     = useState("store");
+  const [aiOpen, setAiOpen]       = useState(false);
+  const [flagOpen, setFlagOpen]   = useState(false);
   const [phaseOpen, setPhaseOpen] = useState(null);
   const [subState, setSubState]   = useState({});
   const [phaseTasks, setPhaseTasks] = useState({});
 
-  const [entries,   setEntries]   = useState(TIMELINE);
-  const [liveTasks, setLiveTasks] = useState(TASKS);
-  const [liveFlags, setLiveFlags] = useState(FLAGS);
-  const [liveFiles, setLiveFiles] = useState(FILES);
-  const [liveTeam,  setLiveTeam]  = useState(TEAM);
-  const [storeData, setStoreData] = useState(STORE);
-  const [allStores, setAllStores] = useState([STORE]);
-  const [loading,   setLoading]   = useState(false);
-  const [dbError,   setDbError]   = useState(null);
-  const [toast,     setToast]     = useState(null);
-  const [editStoreOpen, setEditStoreOpen] = useState(false);
-  const [addStoreOpen,  setAddStoreOpen]  = useState(false);
-  const [teamOpen,      setTeamOpen]      = useState(false);
+  const [entries,    setEntries]    = useState(TIMELINE);
+  const [liveTasks,  setLiveTasks]  = useState(TASKS);
+  const [liveFlags,  setLiveFlags]  = useState(FLAGS);
+  const [liveFiles,  setLiveFiles]  = useState(FILES);
+  const [liveTeam,   setLiveTeam]   = useState(TEAM);
+  const [blockers,   setBlockers]   = useState([]);
+  const [storeData,  setStoreData]  = useState(STORE);
+  const [allStores,  setAllStores]  = useState([STORE]);
+
+  const [loading,        setLoading]        = useState(false);
+  const [dbError,        setDbError]        = useState(null);
+  const [toast,          setToast]          = useState(null);
+  const [editStoreOpen,  setEditStoreOpen]  = useState(false);
+  const [addStoreOpen,   setAddStoreOpen]   = useState(false);
+  const [teamOpen,       setTeamOpen]       = useState(false);
   const composerRef = useRef();
 
-  // ── Load from Supabase on mount ──────────────────────────
+  // ── Load from Supabase ────────────────────────────────────
   useEffect(() => {
     if (!SB.configured()) return;
     setLoading(true);
@@ -2911,16 +3644,15 @@ function App() {
       SB.getFiles(STORE.id),
       SB.getTeam(STORE.id),
       SB.listStores(),
-    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles, dbTeam, dbStores]) => {
-      if (dbEntries?.length) setEntries(dbEntries.map(dbRowToEntry));
-      if (dbTasks?.length)   setLiveTasks(dbTasks.map(dbRowToTask));
-      if (dbFlags?.length)   setLiveFlags(dbFlags.map(dbRowToFlag));
-      if (dbFiles?.length)   setLiveFiles(dbFiles.map(dbRowToFile));
-      if (dbTeam?.length)    setLiveTeam(dbTeam.map((r) => ({
-        name: r.name, role: r.role, team: r.team,
-        load: r.load, initials: r.initials, since: r.since,
-      })));
-      if (dbStores?.length)  setAllStores(dbStores.map(rowToStore));
+      SB.getBlockers(STORE.id),
+    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles, dbTeam, dbStores, dbBlockers]) => {
+      if (dbEntries?.length)  setEntries(dbEntries.map(dbRowToEntry));
+      if (dbTasks?.length)    setLiveTasks(dbTasks.map(dbRowToTask));
+      if (dbFlags?.length)    setLiveFlags(dbFlags.map(dbRowToFlag));
+      if (dbFiles?.length)    setLiveFiles(dbFiles.map(dbRowToFile));
+      if (dbTeam?.length)     setLiveTeam(dbTeam.map((r) => ({ name:r.name, role:r.role, team:r.team, load:r.load, initials:r.initials, since:r.since })));
+      if (dbStores?.length)   setAllStores(dbStores.map(rowToStore));
+      if (dbBlockers?.length) setBlockers(dbBlockers.map(dbRowToBlocker));
     }).catch((e) => setDbError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -2936,11 +3668,11 @@ function App() {
   };
 
   const goToNotes = () => {
-    setTab("notes");
+    setNavView("store"); setTab("notes");
     setTimeout(() => {
       const ta = composerRef.current?.querySelector("textarea");
       ta?.focus();
-      composerRef.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+      composerRef.current?.scrollIntoView?.({ block:"start", behavior:"smooth" });
     }, 30);
   };
 
@@ -2948,9 +3680,7 @@ function App() {
   const postNote = async (n) => {
     const t = nowStamp();
     setEntries((es) => [{ ...n, t }, ...es]);
-    flashToast(n.action
-      ? `Note posted · assigned to ${n.team}${n.due && n.due !== "—" ? ` · due ${n.due}` : ""}`
-      : "Note posted");
+    flashToast(n.action ? `Note posted · assigned to ${n.team}` : "Note posted");
     if (!SB.configured()) return;
     try {
       await SB.insertEntry({
@@ -2965,117 +3695,109 @@ function App() {
   // ── Create task ──────────────────────────────────────────
   const createTask = async (taskData) => {
     const id = `T-${Date.now()}`;
-    const newTask = { id, state: "Open", flag: null, ...taskData };
+    const newTask = { id, state:"Open", ...taskData };
     setLiveTasks((ts) => [newTask, ...ts]);
-    flashToast(`Task created`);
+    flashToast("Task created");
     if (!SB.configured()) return;
     try {
-      const row = await SB.insertTask({
-        id, store_id: STORE.id, title: taskData.title,
-        state: "Open", owner: taskData.owner || "", due: taskData.due || "—", flag: null,
-      });
-      if (row?.id && row.id !== id)
-        setLiveTasks((ts) => ts.map((t) => t.id === id ? dbRowToTask(row) : t));
+      await SB.insertTask({ id, store_id:STORE.id, title:taskData.title,
+        state:"Open", owner:taskData.owner||"", due:taskData.due||"—", flag:taskData.flag||null });
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Update task state ────────────────────────────────────
   const updateTaskState = async (taskId, newState) => {
-    setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state: newState } : t));
+    setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state:newState } : t));
     flashToast(`Task → ${newState}`);
     if (!SB.configured()) return;
     try {
-      await SB.patchTask(taskId, { state: newState, updated_at: new Date().toISOString() });
+      await SB.patchTask(taskId, { state:newState, updated_at:new Date().toISOString() });
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Raise flag ───────────────────────────────────────────
   const submitFlag = async ({ label, tone, team, reason }) => {
     const t = nowStamp();
-    setLiveFlags((fs) => [{ label, tone, team, since: "just now" }, ...fs]);
-    setEntries((es) => [{
-      kind: "note", who: "Priya Shah", team, sev: tone,
-      title: `Flag raised: ${label}`, body: reason || "—",
-      action: true, due: "—", mentions: [`@${team.toLowerCase().replace(/ /g,"")}`], t,
-    }, ...es]);
+    setLiveFlags((fs) => [{ label, tone, team, since:"just now" }, ...fs]);
+    setEntries((es) => [{ kind:"note", who:"Priya Shah", team, sev:tone,
+      title:`Flag raised: ${label}`, body:reason||"—",
+      action:true, due:"—", mentions:[`@${team.toLowerCase().replace(/ /g,"")}`], t }, ...es]);
     setFlagOpen(false);
     flashToast(`Flag raised · assigned to ${team}`);
     if (!SB.configured()) return;
     try {
       await Promise.all([
-        SB.insertFlag({ store_id: STORE.id, label, tone, team, since: "just now" }),
-        SB.insertEntry({ store_id: STORE.id, t, who: "Priya Shah", team, kind: "note", sev: tone,
-          title: `Flag raised: ${label}`, body: reason || "—",
-          action: true, due: "—", mentions: [`@${team.toLowerCase().replace(/ /g,"")}`] }),
+        SB.insertFlag({ store_id:STORE.id, label, tone, team, since:"just now" }),
+        SB.insertEntry({ store_id:STORE.id, t, who:"Priya Shah", team, kind:"note", sev:tone,
+          title:`Flag raised: ${label}`, body:reason||"—",
+          action:true, due:"—", mentions:[`@${team.toLowerCase().replace(/ /g,"")}`] }),
       ]);
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Resolve flag ─────────────────────────────────────────
+  const resolveFlag = async (flagId) => {
+    setLiveFlags((fs) => fs.map((f) => f.id === flagId ? {...f, resolved:true} : f));
+    flashToast("Flag resolved");
+    if (!SB.configured()) return;
+    try { await SB.resolveFlag(flagId); } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Add blocker ───────────────────────────────────────────
+  const addBlocker = async (data) => {
+    const optimistic = { id: Date.now(), ...data, resolved:false };
+    setBlockers((bs) => [optimistic, ...bs]);
+    flashToast("Blocker added");
+    if (!SB.configured()) return;
+    try {
+      const row = await SB.insertBlocker({ store_id:STORE.id, ...data });
+      if (row?.id) setBlockers((bs) => bs.map((b) => b.id === optimistic.id ? dbRowToBlocker(row) : b));
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Resolve blocker ───────────────────────────────────────
+  const resolveBlocker = async (blockerId) => {
+    setBlockers((bs) => bs.map((b) => b.id === blockerId ? {...b, resolved:true} : b));
+    flashToast("Blocker resolved");
+    if (!SB.configured()) return;
+    try { await SB.resolveBlocker(blockerId); } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Upload file ──────────────────────────────────────────
   const uploadFile = async (file) => {
-    const optimistic = { name: file.name, size: "…", who: "me", when: "just now" };
+    const optimistic = { name:file.name, size:"…", who:"me", when:"just now" };
     setLiveFiles((fs) => [optimistic, ...fs]);
     if (!SB.configured()) { flashToast("Configure Supabase to persist files"); return; }
     try {
       const row = await SB.uploadFile(STORE.id, file, "Priya Shah");
-      setLiveFiles((fs) => fs.map((f) => f === optimistic ? dbRowToFile(row) : f));
+      setLiveFiles((fs) => fs.map((f) => f===optimistic ? dbRowToFile(row) : f));
       flashToast(`${file.name} uploaded`);
     } catch (e) {
-      setLiveFiles((fs) => fs.filter((f) => f !== optimistic));
+      setLiveFiles((fs) => fs.filter((f) => f!==optimistic));
       flashToast("Upload failed: " + e.message, true);
     }
   };
 
-  // ── Phase helpers ─────────────────────────────────────────
-  const toggleSub = (phase, i) => {
-    const k = `${phase}:${i}`;
-    const prevDone = subState[k] ?? PHASE_DETAIL[phase].subtasks[i].done;
-    setSubState((s) => ({ ...s, [k]: !prevDone }));
-    flashToast(`${PHASE_DETAIL[phase].subtasks[i].label} → ${!prevDone ? "done" : "open"}`);
-  };
-  const postPhaseNote = (phase, text) => postNote({
-    kind: "note", who: "Priya Shah", team: PHASE_DETAIL[phase].owner, sev: "info",
-    title: `[${phase}] ${text.split("\n")[0].slice(0, 80)}`, body: text, action: false,
-  });
-  const createPhaseTask = async (phase, { title, team, due }) => {
-    const id = `T-${Date.now()}`;
-    setPhaseTasks((pt) => ({ ...pt, [phase]: [...(pt[phase] || []), { id, title, team, due, state: "Open" }] }));
-    const t = nowStamp();
-    const entry = { kind: "task", who: "Priya Shah", team, sev: "info",
-      title: `[${phase}] Task created: ${title}`,
-      body: `Assigned to ${team} · due ${due}`, action: true, due, t };
-    setEntries((es) => [entry, ...es]);
-    flashToast(`Task created · assigned to ${team}`);
-    if (!SB.configured()) return;
-    try {
-      await Promise.all([
-        SB.insertTask({ id, store_id: STORE.id, title, state: "Open", owner: team, due: due || "—" }),
-        SB.insertEntry({ store_id: STORE.id, ...entry }),
-      ]);
-    } catch (e) { flashToast("Sync failed: " + e.message, true); }
-  };
-
-  // ── Save store edits ─────────────────────────────────────
+  // ── Save store ────────────────────────────────────────────
   const saveStore = async (updated) => {
     setStoreData(updated);
-    setAllStores((ss) => ss.map((s) => s.id === updated.id ? updated : s));
+    setAllStores((ss) => ss.map((s) => s.id===updated.id ? updated : s));
     setEditStoreOpen(false);
     flashToast("Store details saved");
     if (!SB.configured()) return;
     try {
       await SB.patchStore(updated.id, {
-        retailer: updated.retailer, store_num: updated.storeNum,
-        name: updated.name, address: updated.address, region: updated.region,
-        phase: updated.phase, health: updated.health,
-        owner: updated.owner, owner_person: updated.ownerPerson,
-        next_action: updated.nextAction, due: updated.due,
-        sqft: updated.sqft, scheduled_live: updated.scheduledLive,
-        updated_at: new Date().toISOString(),
+        retailer:updated.retailer, store_num:updated.storeNum, name:updated.name,
+        address:updated.address, region:updated.region, phase:updated.phase,
+        health:updated.health, owner:updated.owner, owner_person:updated.ownerPerson,
+        next_action:updated.nextAction, due:updated.due,
+        sqft:updated.sqft, scheduled_live:updated.scheduledLive,
+        updated_at:new Date().toISOString(),
       });
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
-  // ── Add new store ─────────────────────────────────────────
+  // ── Add store ─────────────────────────────────────────────
   const addStore = async (newStore) => {
     setAllStores((ss) => [newStore, ...ss]);
     setAddStoreOpen(false);
@@ -3083,16 +3805,15 @@ function App() {
     if (!SB.configured()) return;
     try {
       await SB.insertStore({
-        id: newStore.id, retailer: newStore.retailer,
-        retailer_code: newStore.retailerCode || newStore.id.split("-")[0],
-        store_num: newStore.storeNum, name: newStore.name,
-        address: newStore.address, region: newStore.region,
-        phase: newStore.phase, health: newStore.health,
-        owner: newStore.owner, owner_person: newStore.ownerPerson,
-        next_action: newStore.nextAction, due: newStore.due,
-        sqft: newStore.sqft, scheduled_live: newStore.scheduledLive,
-        opened_on: newStore.openedOn, due_delta: newStore.dueDelta,
-        risk: newStore.risk, fixture_count: newStore.fixtureCount, skus: newStore.skus,
+        id:newStore.id, retailer:newStore.retailer,
+        retailer_code:newStore.id.split("-")[0],
+        store_num:newStore.storeNum, name:newStore.name,
+        address:newStore.address, region:newStore.region,
+        phase:newStore.phase, health:newStore.health,
+        owner:newStore.owner, owner_person:newStore.ownerPerson,
+        next_action:newStore.nextAction, due:newStore.due,
+        sqft:newStore.sqft, scheduled_live:newStore.scheduledLive,
+        opened_on:newStore.openedOn, risk:newStore.risk,
       });
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
@@ -3103,8 +3824,35 @@ function App() {
     setTeamOpen(false);
     flashToast("Team saved");
     if (!SB.configured()) return;
+    try { await SB.replaceTeam(STORE.id, members); } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Phase helpers ─────────────────────────────────────────
+  const toggleSub = (phase, i) => {
+    const k = `${phase}:${i}`;
+    const prevDone = subState[k] ?? PHASE_DETAIL[phase].subtasks[i].done;
+    setSubState((s) => ({...s, [k]: !prevDone}));
+    flashToast(`${PHASE_DETAIL[phase].subtasks[i].label} → ${!prevDone ? "done" : "open"}`);
+  };
+  const postPhaseNote = (phase, text) => postNote({
+    kind:"note", who:"Priya Shah", team:PHASE_DETAIL[phase].owner, sev:"info",
+    title:`[${phase}] ${text.split("\n")[0].slice(0,80)}`, body:text, action:false,
+  });
+  const createPhaseTask = async (phase, { title, team, due }) => {
+    const id = `T-${Date.now()}`;
+    setPhaseTasks((pt) => ({...pt, [phase]: [...(pt[phase]||[]), {id,title,team,due,state:"Open"}]}));
+    const t = nowStamp();
+    const entry = { kind:"task", who:"Priya Shah", team, sev:"info",
+      title:`[${phase}] Task created: ${title}`,
+      body:`Assigned to ${team} · due ${due}`, action:true, due, t };
+    setEntries((es) => [entry, ...es]);
+    flashToast(`Task created · assigned to ${team}`);
+    if (!SB.configured()) return;
     try {
-      await SB.replaceTeam(STORE.id, members);
+      await Promise.all([
+        SB.insertTask({ id, store_id:STORE.id, title, state:"Open", owner:team, due:due||"—" }),
+        SB.insertEntry({ store_id:STORE.id, ...entry }),
+      ]);
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
@@ -3112,12 +3860,12 @@ function App() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.matches?.("input, textarea, select")) return;
-      const map = { "1":"overview","2":"timeline","3":"notes","4":"tasks","5":"comms","6":"files","7":"audit" };
-      if (map[e.key]) setTab(map[e.key]);
-      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); goToNotes(); }
-      if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setFlagOpen(true); }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") { e.preventDefault(); setAiOpen((o) => !o); }
-      if (e.key === "Escape") { setAiOpen(false); setFlagOpen(false); setPhaseOpen(null); }
+      const map = {"1":"overview","2":"timeline","3":"notes","4":"tasks","5":"comms","6":"files","7":"audit"};
+      if (map[e.key]) { setNavView("store"); setTab(map[e.key]); }
+      if (e.key.toLowerCase()==="n" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); goToNotes(); }
+      if (e.key.toLowerCase()==="f" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setFlagOpen(true); }
+      if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="j") { e.preventDefault(); setAiOpen((o) => !o); }
+      if (e.key==="Escape") { setAiOpen(false); setFlagOpen(false); setPhaseOpen(null); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -3132,37 +3880,59 @@ function App() {
     r.style.setProperty("--accent-h", tweaks.accentHue);
   }, [tweaks]);
 
+  const isStoreView = navView === "store";
+
   return (
     <div className="app">
-      <LeftNav stores={allStores} onAddStore={() => setAddStoreOpen(true)} />
+      <LeftNav
+        stores={allStores}
+        allTasks={liveTasks}
+        allFlags={liveFlags}
+        allBlockers={blockers}
+        onAddStore={() => setAddStoreOpen(true)}
+        onNavSelect={setNavView}
+        navView={navView}
+      />
       <main className="main">
-        <StoreHeader store={storeData} tweaks={tweaks} onNewNote={goToNotes} onFlag={() => setFlagOpen(true)} onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)} />
-        <TabBar active={tab} onSelect={setTab} />
+        {isStoreView && (
+          <StoreHeader store={storeData} tweaks={tweaks}
+            onNewNote={goToNotes} onFlag={() => setFlagOpen(true)}
+            onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)} />
+        )}
+        {isStoreView && <TabBar active={tab} onSelect={setTab} />}
 
         {!SB.configured() && (
           <div className="config-banner">
-            ⚠ Supabase not configured — changes won't persist after refresh.
-            Fill in <code>window.__STOREOPS_CONFIG__</code> in index.html.
+            ⚠ Supabase not configured — changes won't persist. Add credentials to index.html.
           </div>
         )}
-        {dbError && (
-          <div className="config-banner config-banner-error">
-            ⚠ Supabase error: {dbError}
-          </div>
-        )}
+        {dbError && <div className="config-banner config-banner-error">⚠ Supabase error: {dbError}</div>}
 
         <div className="content">
           <div className="content-main">
             {loading && <div className="loading-bar" />}
-            {tab === "overview" && <Overview flags={liveFlags} tasks={liveTasks} />}
-            {tab === "timeline" && <Timeline entries={entries} />}
-            {tab === "notes"    && <Notes notes={entries.filter((e) => e.kind === "note")} composerRef={composerRef} onPost={postNote} />}
-            {tab === "tasks"    && <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState} />}
-            {tab === "comms"    && <Comms />}
-            {tab === "files"    && <Files files={liveFiles} onUpload={uploadFile} />}
-            {tab === "audit"    && <Audit />}
+
+            {/* Global nav views */}
+            {navView === "tasks"    && <GlobalTasksView tasks={liveTasks} onStateChange={updateTaskState} storeId={STORE.id} flashToast={flashToast} />}
+            {navView === "flags"    && <GlobalFlagsView flags={liveFlags} onResolve={resolveFlag} />}
+            {navView === "blockers" && <GlobalBlockersView blockers={blockers} onAdd={addBlocker} onResolve={resolveBlocker} storeId={STORE.id} flashToast={flashToast} />}
+
+            {/* Store tabs */}
+            {isStoreView && tab === "overview"  && <Overview flags={liveFlags} tasks={liveTasks} />}
+            {isStoreView && tab === "timeline"  && <Timeline entries={entries} />}
+            {isStoreView && tab === "notes"     && <Notes notes={entries.filter((e) => e.kind==="note")} composerRef={composerRef} onPost={postNote} />}
+            {isStoreView && tab === "tasks"     && (
+              <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState}
+                blockers={blockers} onAddBlocker={addBlocker} onResolveBlocker={resolveBlocker}
+                storeId={STORE.id} flashToast={flashToast} />
+            )}
+            {isStoreView && tab === "comms"     && <Comms />}
+            {isStoreView && tab === "files"     && <Files files={liveFiles} onUpload={uploadFile} />}
+            {isStoreView && tab === "audit"     && <Audit />}
           </div>
-          {tweaks.showRail && <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} />}
+          {tweaks.showRail && isStoreView && (
+            <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} />
+          )}
         </div>
       </main>
 
@@ -3176,14 +3946,11 @@ function App() {
       <AddStoreModal open={addStoreOpen} onClose={() => setAddStoreOpen(false)} onAdd={addStore} />
       <TeamModal open={teamOpen} onClose={() => setTeamOpen(false)} team={liveTeam} onSave={saveTeam} />
       <PhaseDrawer
-        phase={phaseOpen}
-        onClose={() => setPhaseOpen(null)}
-        subState={subState}
-        onToggleSub={toggleSub}
-        onPostNote={postPhaseNote}
-        onCreateTask={createPhaseTask}
-        phaseTasks={phaseOpen ? (phaseTasks[phaseOpen] || []) : []}
-        phaseNotes={phaseOpen ? entries.filter((e) => e.kind === "note" && e.title?.startsWith(`[${phaseOpen}]`)) : []}
+        phase={phaseOpen} onClose={() => setPhaseOpen(null)}
+        subState={subState} onToggleSub={toggleSub}
+        onPostNote={postPhaseNote} onCreateTask={createPhaseTask}
+        phaseTasks={phaseOpen ? (phaseTasks[phaseOpen]||[]) : []}
+        phaseNotes={phaseOpen ? entries.filter((e) => e.kind==="note" && e.title?.startsWith(`[${phaseOpen}]`)) : []}
       />
 
       {toast && (
@@ -3210,339 +3977,6 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
-// ============================================================
-// STORE EDIT MODAL
-// Edit store details: name, address, phase, health, owner, etc.
-// ============================================================
-function StoreEditModal({ store, open, onClose, onSave }) {
-  const [form, setForm] = useState(store);
-  useEffect(() => { if (open) setForm(store); }, [open, store]);
-
-  useEffect(() => {
-    if (!open) return;
-    const h = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open, onClose]);
-
-  if (!open) return null;
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const submit = (e) => {
-    e.preventDefault();
-    onSave(form);
-  };
-
-  return (
-    <div className="ai-modal-scrim" onMouseDown={onClose}>
-      <form className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={submit}>
-        <header className="ai-modal-head">
-          <div className="ai-modal-title">
-            <Icon.paper /><span>Edit store</span>
-            <span className="muted-tx mono">· {store.id}</span>
-          </div>
-          <div className="grow" />
-          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
-          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
-        </header>
-
-        <div className="flag-body">
-          <label className="field">
-            <span className="field-l">Store ID</span>
-            <input value={form.id} onChange={(e) => set("id", e.target.value)} placeholder="e.g. WFM-1247" />
-          </label>
-          <label className="field">
-            <span className="field-l">Retailer</span>
-            <input value={form.retailer} onChange={(e) => set("retailer", e.target.value)} placeholder="e.g. Whole Foods Market" />
-          </label>
-          <label className="field">
-            <span className="field-l">Store #</span>
-            <input value={form.storeNum} onChange={(e) => set("storeNum", e.target.value)} placeholder="e.g. 1247" />
-          </label>
-          <label className="field">
-            <span className="field-l">Name</span>
-            <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Cambridge — Charles Sq" />
-          </label>
-          <label className="field">
-            <span className="field-l">Address</span>
-            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street, City State ZIP" />
-          </label>
-          <label className="field">
-            <span className="field-l">Region</span>
-            <input value={form.region} onChange={(e) => set("region", e.target.value)} placeholder="e.g. Northeast / NE-04" />
-          </label>
-          <div className="field">
-            <span className="field-l">Phase</span>
-            <select className="select-ish mono" value={form.phase} onChange={(e) => set("phase", e.target.value)}>
-              {["Planning","Scheduled","COI","Deployment","Live"].map((p) => <option key={p}>{p}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <span className="field-l">Health</span>
-            <div className="sev-seg">
-              {[["green","green"],["yellow","yellow"],["red","red"]].map(([v, label]) => (
-                <button type="button" key={v}
-                  className={cx("sev-btn", form.health === v && "is-on")}
-                  onClick={() => set("health", v)}>
-                  <Dot tone={v} /> {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <label className="field">
-            <span className="field-l">Owner team</span>
-            <select className="select-ish mono" value={form.owner} onChange={(e) => set("owner", e.target.value)}>
-              {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
-            </select>
-          </label>
-          <label className="field">
-            <span className="field-l">Owner person</span>
-            <input value={form.ownerPerson} onChange={(e) => set("ownerPerson", e.target.value)} placeholder="e.g. Priya Shah" />
-          </label>
-          <label className="field">
-            <span className="field-l">Next action</span>
-            <input value={form.nextAction} onChange={(e) => set("nextAction", e.target.value)} placeholder="e.g. Get signed COI" />
-          </label>
-          <label className="field">
-            <span className="field-l">Due</span>
-            <input className="mono" value={form.due} onChange={(e) => set("due", e.target.value)} placeholder="May 6" />
-          </label>
-          <div className="field-row-2">
-            <label className="field">
-              <span className="field-l">Sqft</span>
-              <input className="mono" value={form.sqft} onChange={(e) => set("sqft", e.target.value)} placeholder="48,200" />
-            </label>
-            <label className="field">
-              <span className="field-l">Go-live</span>
-              <input className="mono" value={form.scheduledLive} onChange={(e) => set("scheduledLive", e.target.value)} placeholder="May 18, 2026" />
-            </label>
-          </div>
-        </div>
-
-        <div className="flag-foot">
-          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn primary"><Icon.check /> Save changes</button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-// ============================================================
-// ADD STORE MODAL
-// ============================================================
-function AddStoreModal({ open, onClose, onAdd }) {
-  const blank = { id: "", retailer: "", storeNum: "", name: "", address: "",
-    region: "", phase: "Planning", health: "green", owner: "Implementation",
-    ownerPerson: "", nextAction: "", due: "", sqft: "", scheduledLive: "",
-    openedOn: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),
-    dueDelta: "", risk: "low", fixtureCount: 0, skus: 0, retailerCode: "" };
-  const [form, setForm] = useState(blank);
-
-  useEffect(() => { if (open) setForm(blank); }, [open]);
-  useEffect(() => {
-    if (!open) return;
-    const h = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open, onClose]);
-
-  if (!open) return null;
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (!form.id.trim() || !form.retailer.trim()) return;
-    onAdd({ ...form, id: form.id.trim().toUpperCase() });
-  };
-
-  return (
-    <div className="ai-modal-scrim" onMouseDown={onClose}>
-      <form className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={submit}>
-        <header className="ai-modal-head">
-          <div className="ai-modal-title"><Icon.plus /><span>Add new store</span></div>
-          <div className="grow" />
-          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
-          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
-        </header>
-        <div className="flag-body">
-          <label className="field">
-            <span className="field-l">Store ID *</span>
-            <input autoFocus value={form.id} onChange={(e) => set("id", e.target.value)} placeholder="e.g. WFM-1248" />
-          </label>
-          <label className="field">
-            <span className="field-l">Retailer *</span>
-            <input value={form.retailer} onChange={(e) => set("retailer", e.target.value)} placeholder="e.g. Whole Foods Market" />
-          </label>
-          <label className="field">
-            <span className="field-l">Store #</span>
-            <input value={form.storeNum} onChange={(e) => set("storeNum", e.target.value)} placeholder="e.g. 1248" />
-          </label>
-          <label className="field">
-            <span className="field-l">Name</span>
-            <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Boston — Back Bay" />
-          </label>
-          <label className="field">
-            <span className="field-l">Address</span>
-            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street, City State ZIP" />
-          </label>
-          <label className="field">
-            <span className="field-l">Region</span>
-            <input value={form.region} onChange={(e) => set("region", e.target.value)} placeholder="e.g. Northeast / NE-04" />
-          </label>
-          <div className="field">
-            <span className="field-l">Phase</span>
-            <select className="select-ish mono" value={form.phase} onChange={(e) => set("phase", e.target.value)}>
-              {["Planning","Scheduled","COI","Deployment","Live"].map((p) => <option key={p}>{p}</option>)}
-            </select>
-          </div>
-          <label className="field">
-            <span className="field-l">Owner person</span>
-            <input value={form.ownerPerson} onChange={(e) => set("ownerPerson", e.target.value)} placeholder="e.g. Jordan Reyes" />
-          </label>
-          <label className="field">
-            <span className="field-l">Go-live target</span>
-            <input className="mono" value={form.scheduledLive} onChange={(e) => set("scheduledLive", e.target.value)} placeholder="Jun 15, 2026" />
-          </label>
-        </div>
-        <div className="flag-foot">
-          <span className="muted-tx mono">* required</span>
-          <div className="grow" />
-          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn primary" disabled={!form.id.trim() || !form.retailer.trim()}>
-            <Icon.plus /> Add store
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-// ============================================================
-// TEAM MANAGER MODAL
-// Add, edit, remove team members
-// ============================================================
-function TeamModal({ open, onClose, team, onSave }) {
-  const [members, setMembers] = useState(team);
-  const [editIdx, setEditIdx] = useState(null);
-  const [form, setForm] = useState(null);
-
-  useEffect(() => { if (open) { setMembers(team); setEditIdx(null); setForm(null); } }, [open, team]);
-  useEffect(() => {
-    if (!open) return;
-    const h = (e) => { if (e.key === "Escape") { if (editIdx !== null) { setEditIdx(null); setForm(null); } else onClose(); } };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open, onClose, editIdx]);
-
-  if (!open) return null;
-
-  const startEdit = (i) => {
-    setEditIdx(i);
-    setForm(i === "new"
-      ? { name: "", role: "", team: "Implementation", load: "active", initials: "", since: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}) }
-      : { ...members[i] });
-  };
-
-  const saveEdit = () => {
-    if (!form.name.trim()) return;
-    const initials = form.initials.trim() ||
-      form.name.trim().split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-    const member = { ...form, initials };
-    if (editIdx === "new") {
-      setMembers((m) => [...m, member]);
-    } else {
-      setMembers((m) => m.map((x, i) => i === editIdx ? member : x));
-    }
-    setEditIdx(null);
-    setForm(null);
-  };
-
-  const remove = (i) => {
-    setMembers((m) => m.filter((_, idx) => idx !== i));
-  };
-
-  return (
-    <div className="ai-modal-scrim" onMouseDown={onClose}>
-      <div className="ai-modal team-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <header className="ai-modal-head">
-          <div className="ai-modal-title"><Icon.flag /><span>Team members</span></div>
-          <div className="grow" />
-          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
-          <button className="iconbtn" onClick={onClose}><Icon.close /></button>
-        </header>
-
-        <div className="team-modal-body">
-          {/* Member list */}
-          <ul className="team-edit-list">
-            {members.map((m, i) => (
-              <li key={i} className={cx("team-edit-row", editIdx === i && "is-editing")}>
-                {editIdx === i ? (
-                  <div className="team-inline-form">
-                    <input className="team-field" placeholder="Full name *" value={form.name} onChange={(e) => setForm((f) => ({...f, name: e.target.value}))} autoFocus />
-                    <input className="team-field" placeholder="Role / title" value={form.role} onChange={(e) => setForm((f) => ({...f, role: e.target.value}))} />
-                    <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f) => ({...f, team: e.target.value}))}>
-                      {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
-                    </select>
-                    <select className="select-ish mono" value={form.load} onChange={(e) => setForm((f) => ({...f, load: e.target.value}))}>
-                      {["primary","active","watching"].map((l) => <option key={l}>{l}</option>)}
-                    </select>
-                    <input className="team-field mono" placeholder="Initials (auto)" value={form.initials} onChange={(e) => setForm((f) => ({...f, initials: e.target.value}))} style={{width: 70}} />
-                    <div className="team-form-actions">
-                      <button className="btn primary sm" onClick={saveEdit} disabled={!form.name.trim()}><Icon.check /> Save</button>
-                      <button className="btn ghost sm" onClick={() => { setEditIdx(null); setForm(null); }}>Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <span className="avatar avatar-sm mono">{m.initials}</span>
-                    <div className="contact-text">
-                      <div className="contact-name">{m.name}</div>
-                      <div className="contact-sub">{m.role} · {m.team}</div>
-                    </div>
-                    <Pill tone={m.load === "primary" ? "watch" : "info"}>{m.load}</Pill>
-                    <button className="btn ghost sm" onClick={() => startEdit(i)}>Edit</button>
-                    <button className="btn ghost sm" onClick={() => remove(i)} style={{color:"var(--bad)"}}>Remove</button>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-
-          {/* Add new */}
-          {editIdx === "new" ? (
-            <div className="team-inline-form team-new-form">
-              <input className="team-field" placeholder="Full name *" value={form.name} onChange={(e) => setForm((f) => ({...f, name: e.target.value}))} autoFocus />
-              <input className="team-field" placeholder="Role / title" value={form.role} onChange={(e) => setForm((f) => ({...f, role: e.target.value}))} />
-              <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f) => ({...f, team: e.target.value}))}>
-                {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
-              </select>
-              <select className="select-ish mono" value={form.load} onChange={(e) => setForm((f) => ({...f, load: e.target.value}))}>
-                {["primary","active","watching"].map((l) => <option key={l}>{l}</option>)}
-              </select>
-              <div className="team-form-actions">
-                <button className="btn primary sm" onClick={saveEdit} disabled={!form.name.trim()}><Icon.plus /> Add</button>
-                <button className="btn ghost sm" onClick={() => { setEditIdx(null); setForm(null); }}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <button className="btn ghost" style={{marginTop: 8}} onClick={() => startEdit("new")}>
-              <Icon.plus /> Add team member
-            </button>
-          )}
-        </div>
-
-        <div className="flag-foot">
-          <span className="muted-tx mono">{members.length} members</span>
-          <div className="grow" />
-          <button className="btn ghost" onClick={onClose}>Cancel</button>
-          <button className="btn primary" onClick={() => onSave(members)}><Icon.check /> Save team</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 </script>
 </body>
 </html>

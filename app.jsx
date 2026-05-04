@@ -1238,30 +1238,283 @@ function FlagModal({ open, onClose, onSubmit }) {
 
 }
 
+
+// ============================================================
+// SUPABASE HELPER
+// Thin fetch wrapper — no SDK needed. Reads credentials from
+// window.__STOREOPS_CONFIG__ set in index.html.
+// ============================================================
+const SB = (() => {
+  const cfg  = () => window.__STOREOPS_CONFIG__ || {};
+  const url  = () => cfg().supabaseUrl      || "";
+  const key  = () => cfg().supabaseAnonKey  || "";
+  const configured = () => !!(url() && key());
+
+  async function req(path, opts = {}) {
+    if (!configured()) throw new Error("supabase_not_configured");
+    const res = await fetch(`${url()}/rest/v1${path}`, {
+      method: opts.method || "GET",
+      headers: {
+        apikey: key(),
+        Authorization: `Bearer ${key()}`,
+        "Content-Type": "application/json",
+        Prefer: opts.prefer || "return=representation",
+        ...opts.headers,
+      },
+      body: opts.body != null ? JSON.stringify(opts.body) : undefined,
+    });
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || data?.error || "supabase_error");
+    return data;
+  }
+
+  return {
+    configured,
+    async getEntries(storeId) {
+      return req(`/timeline_entries?store_id=eq.${storeId}&order=created_at.desc&limit=200`);
+    },
+    async insertEntry(row) {
+      const rows = await req("/timeline_entries", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async getTasks(storeId) {
+      return req(`/tasks?store_id=eq.${storeId}&order=created_at.desc`);
+    },
+    async insertTask(row) {
+      const rows = await req("/tasks", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async patchTask(id, fields) {
+      return req(`/tasks?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", body: fields });
+    },
+    async getFlags(storeId) {
+      return req(`/flags?store_id=eq.${storeId}&resolved=eq.false&order=created_at.desc`);
+    },
+    async insertFlag(row) {
+      const rows = await req("/flags", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async getFiles(storeId) {
+      return req(`/files?store_id=eq.${storeId}&order=created_at.desc`);
+    },
+    async insertFile(row) {
+      const rows = await req("/files", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async uploadFile(storeId, file, uploadedBy) {
+      const bucket = "storeops-files";
+      const path   = `${storeId}/${Date.now()}_${file.name}`;
+      const upRes  = await fetch(`${url()}/storage/v1/object/${bucket}/${path}`, {
+        method: "POST",
+        headers: { apikey: key(), Authorization: `Bearer ${key()}`, "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      if (!upRes.ok) throw new Error("upload_failed");
+      const size = file.size < 1024 * 1024
+        ? `${Math.round(file.size / 1024)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      return SB.insertFile({ store_id: storeId, name: file.name, size, who: uploadedBy, bucket_path: path });
+    },
+  };
+})();
+
+function dbRowToEntry(r) {
+  return { id: r.id, t: r.t, who: r.who, team: r.team, kind: r.kind,
+    sev: r.sev, title: r.title, body: r.body, action: r.action,
+    due: r.due, mentions: r.mentions, attachment: r.attachment };
+}
+function dbRowToTask(r) {
+  return { id: r.id, title: r.title, state: r.state, owner: r.owner, due: r.due, flag: r.flag };
+}
+function dbRowToFlag(r) {
+  return { id: r.id, label: r.label, tone: r.tone, team: r.team, since: r.since || "—" };
+}
+function dbRowToFile(r) {
+  return { id: r.id, name: r.name, size: r.size, who: r.who,
+    when: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—" };
+}
+
+// ============================================================
+// TASKS — now accepts props from App
+// ============================================================
+function Tasks({ tasks, onCreate, onStateChange }) {
+  const [newTitle, setNewTitle] = useState("");
+  const [newOwner, setNewOwner] = useState("");
+  const [newDue,   setNewDue]   = useState("");
+  const cols = [
+    { id: "Open",    tone: "info" },
+    { id: "Waiting", tone: "watch" },
+    { id: "Done",    tone: "ok" },
+  ];
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    onCreate({ title: newTitle.trim(), owner: newOwner.trim(), due: newDue.trim() || "—" });
+    setNewTitle(""); setNewOwner(""); setNewDue("");
+  };
+
+  return (
+    <div className="tasks">
+      <div className="tasks-head">
+        <h3>Tasks <span className="muted-tx mono">{tasks.length}</span></h3>
+      </div>
+
+      {/* New task form */}
+      <form className="new-task-form" onSubmit={submit}>
+        <input
+          className="new-task-title"
+          placeholder="New task title…"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+        />
+        <input
+          className="new-task-field"
+          placeholder="Owner"
+          value={newOwner}
+          onChange={(e) => setNewOwner(e.target.value)}
+        />
+        <input
+          className="new-task-field mono"
+          placeholder="Due date"
+          value={newDue}
+          onChange={(e) => setNewDue(e.target.value)}
+        />
+        <button className="btn primary" type="submit" disabled={!newTitle.trim()}>
+          <Icon.plus /> Add task
+        </button>
+      </form>
+
+      <div className="task-cols">
+        {cols.map((c) => {
+          const items = tasks.filter((t) => t.state === c.id);
+          return (
+            <div key={c.id} className="task-col">
+              <div className="task-col-head">
+                <Dot tone={c.tone === "ok" ? "green" : c.tone === "watch" ? "yellow" : "neutral"} />
+                <span>{c.id}</span>
+                <span className="mono task-col-n">{items.length}</span>
+              </div>
+              {items.map((t) => (
+                <div key={t.id} className={cx("task-card", t.flag === "blocker" && "is-blocker")}>
+                  <div className="task-card-top">
+                    <span className="mono task-id">{t.id}</span>
+                    {t.flag && <Pill tone="blocker">blocker</Pill>}
+                  </div>
+                  <div className="task-card-title">{t.title}</div>
+                  <div className="task-card-foot">
+                    <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map((s)=>s[0]).join("")}</span>
+                    <span className="muted-tx">{t.owner}</span>
+                    <div className="grow" />
+                    <span className="mono">{t.due}</span>
+                  </div>
+                  {/* State controls */}
+                  <div className="task-card-actions">
+                    {c.id !== "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Open")}>Open</button>}
+                    {c.id !== "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Waiting")}>Waiting</button>}
+                    {c.id !== "Done"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Done")}>Done</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// FILES — now accepts props from App
+// ============================================================
+function Files({ files, onUpload }) {
+  const fileInputRef = useRef();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) onUpload(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="files">
+      <div className="files-head">
+        <h3>Files <span className="muted-tx mono">{files.length}</span></h3>
+        <button className="btn ghost sm" onClick={() => fileInputRef.current?.click()}>
+          <Icon.plus /> Upload
+        </button>
+        <input ref={fileInputRef} type="file" style={{display:"none"}} onChange={handleFileChange} />
+      </div>
+      <table className="ftbl">
+        <thead><tr>
+          <th style={{ width: "6%" }}>#</th>
+          <th>Name</th><th>Size</th><th>Uploaded by</th><th>When</th><th></th>
+        </tr></thead>
+        <tbody>
+          {files.map((f, i) => (
+            <tr key={f.id || f.name}>
+              <td className="mono muted-tx">{String(i + 1).padStart(2, "0")}</td>
+              <td><span className="ftbl-name"><Icon.paper /> {f.name}</span></td>
+              <td className="mono">{f.size}</td>
+              <td>{f.who}</td>
+              <td className="mono">{f.when}</td>
+              <td className="ftbl-actions"><button className="iconbtn xs"><Icon.dot3 /></button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ============================================================
 // APP
 // ============================================================
 function App() {
   const [tweaks, setTweak] = useTweaks(window.__TWEAK_DEFAULTS__ || {});
-  const [tab, setTab] = useState("overview");
-  const [aiOpen, setAiOpen] = useState(false);
+  const [tab, setTab]           = useState("overview");
+  const [aiOpen, setAiOpen]     = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
   const [phaseOpen, setPhaseOpen] = useState(null);
-  const [subState, setSubState] = useState({});
+  const [subState, setSubState]   = useState({});
   const [phaseTasks, setPhaseTasks] = useState({});
-  const [entries, setEntries] = useState(TIMELINE);
-  const [flags, setFlags] = useState(FLAGS);
-  const [toast, setToast] = useState(null);
+
+  const [entries,   setEntries]   = useState(TIMELINE);
+  const [liveTasks, setLiveTasks] = useState(TASKS);
+  const [liveFlags, setLiveFlags] = useState(FLAGS);
+  const [liveFiles, setLiveFiles] = useState(FILES);
+  const [loading,   setLoading]   = useState(false);
+  const [dbError,   setDbError]   = useState(null);
+  const [toast,     setToast]     = useState(null);
   const composerRef = useRef();
 
-  const flashToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast((t) => t === msg ? null : t), 3200);
+  // ── Load from Supabase on mount ──────────────────────────
+  useEffect(() => {
+    if (!SB.configured()) return;
+    setLoading(true);
+    Promise.all([
+      SB.getEntries(STORE.id),
+      SB.getTasks(STORE.id),
+      SB.getFlags(STORE.id),
+      SB.getFiles(STORE.id),
+    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles]) => {
+      if (dbEntries?.length) setEntries(dbEntries.map(dbRowToEntry));
+      if (dbTasks?.length)   setLiveTasks(dbTasks.map(dbRowToTask));
+      if (dbFlags?.length)   setLiveFlags(dbFlags.map(dbRowToFlag));
+      if (dbFiles?.length)   setLiveFiles(dbFiles.map(dbRowToFile));
+    }).catch((e) => setDbError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const flashToast = (msg, isError = false) => {
+    setToast({ msg, isError });
+    setTimeout(() => setToast(null), 3200);
   };
 
   const nowStamp = () => {
     const now = new Date();
-    return `${now.toLocaleString("en-US", { month: "short", day: "numeric" })} · ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    return `${now.toLocaleString("en-US",{month:"short",day:"numeric"})} · ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
   };
 
   const goToNotes = () => {
@@ -1273,80 +1526,138 @@ function App() {
     }, 30);
   };
 
-  const postNote = (n) => {
-    const now = new Date();
-    const t = `${now.toLocaleString("en-US", { month: "short", day: "numeric" })} · ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  // ── Post note ────────────────────────────────────────────
+  const postNote = async (n) => {
+    const t = nowStamp();
     setEntries((es) => [{ ...n, t }, ...es]);
-    if (n.action) {
-      flashToast(`Posted note · task assigned to ${n.team}${n.due && n.due !== "—" ? ` · due ${n.due}` : ""}`);
-    } else {
-      flashToast("Note posted");
-    }
+    flashToast(n.action
+      ? `Note posted · assigned to ${n.team}${n.due && n.due !== "—" ? ` · due ${n.due}` : ""}`
+      : "Note posted");
+    if (!SB.configured()) return;
+    try {
+      await SB.insertEntry({
+        store_id: STORE.id, t, who: n.who || "Priya Shah",
+        team: n.team, kind: n.kind || "note", sev: n.sev,
+        title: n.title, body: n.body, action: n.action || false,
+        due: n.due, mentions: n.mentions, attachment: n.attachment,
+      });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
-  const submitFlag = ({ label, tone, team, reason }) => {
-    setFlags((fs) => [{ label, tone, team, since: "just now" }, ...fs]);
-    const now = new Date();
-    const t = `${now.toLocaleString("en-US", { month: "short", day: "numeric" })} · ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  // ── Create task ──────────────────────────────────────────
+  const createTask = async (taskData) => {
+    const id = `T-${Date.now()}`;
+    const newTask = { id, state: "Open", flag: null, ...taskData };
+    setLiveTasks((ts) => [newTask, ...ts]);
+    flashToast(`Task created`);
+    if (!SB.configured()) return;
+    try {
+      const row = await SB.insertTask({
+        id, store_id: STORE.id, title: taskData.title,
+        state: "Open", owner: taskData.owner || "", due: taskData.due || "—", flag: null,
+      });
+      if (row?.id && row.id !== id)
+        setLiveTasks((ts) => ts.map((t) => t.id === id ? dbRowToTask(row) : t));
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Update task state ────────────────────────────────────
+  const updateTaskState = async (taskId, newState) => {
+    setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state: newState } : t));
+    flashToast(`Task → ${newState}`);
+    if (!SB.configured()) return;
+    try {
+      await SB.patchTask(taskId, { state: newState, updated_at: new Date().toISOString() });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Raise flag ───────────────────────────────────────────
+  const submitFlag = async ({ label, tone, team, reason }) => {
+    const t = nowStamp();
+    setLiveFlags((fs) => [{ label, tone, team, since: "just now" }, ...fs]);
     setEntries((es) => [{
       kind: "note", who: "Priya Shah", team, sev: tone,
-      title: `Flag raised: ${label}`,
-      body: reason || "—",
-      action: true, due: "—",
-      mentions: [`@${team.toLowerCase().replace(/ /g, "")}`],
-      t
+      title: `Flag raised: ${label}`, body: reason || "—",
+      action: true, due: "—", mentions: [`@${team.toLowerCase().replace(/ /g,"")}`], t,
     }, ...es]);
     setFlagOpen(false);
     flashToast(`Flag raised · assigned to ${team}`);
+    if (!SB.configured()) return;
+    try {
+      await Promise.all([
+        SB.insertFlag({ store_id: STORE.id, label, tone, team, since: "just now" }),
+        SB.insertEntry({ store_id: STORE.id, t, who: "Priya Shah", team, kind: "note", sev: tone,
+          title: `Flag raised: ${label}`, body: reason || "—",
+          action: true, due: "—", mentions: [`@${team.toLowerCase().replace(/ /g,"")}`] }),
+      ]);
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
-  // hotkeys
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.target.matches?.("input, textarea, select")) return;
-      const map = { "1": "overview", "2": "timeline", "3": "notes", "4": "tasks", "5": "comms", "6": "files", "7": "audit" };
-      if (map[e.key]) {setTab(map[e.key]);}
-      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) {e.preventDefault();goToNotes();}
-      if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey) {e.preventDefault();setFlagOpen(true);}
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {e.preventDefault();setAiOpen((o) => !o);}
-      if (e.key === "Escape") {if (aiOpen) setAiOpen(false);if (flagOpen) setFlagOpen(false);if (phaseOpen) setPhaseOpen(null);}
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [aiOpen, flagOpen, phaseOpen]);
+  // ── Upload file ──────────────────────────────────────────
+  const uploadFile = async (file) => {
+    const optimistic = { name: file.name, size: "…", who: "me", when: "just now" };
+    setLiveFiles((fs) => [optimistic, ...fs]);
+    if (!SB.configured()) { flashToast("Configure Supabase to persist files"); return; }
+    try {
+      const row = await SB.uploadFile(STORE.id, file, "Priya Shah");
+      setLiveFiles((fs) => fs.map((f) => f === optimistic ? dbRowToFile(row) : f));
+      flashToast(`${file.name} uploaded`);
+    } catch (e) {
+      setLiveFiles((fs) => fs.filter((f) => f !== optimistic));
+      flashToast("Upload failed: " + e.message, true);
+    }
+  };
 
+  // ── Phase helpers ─────────────────────────────────────────
   const toggleSub = (phase, i) => {
     const k = `${phase}:${i}`;
     const prevDone = subState[k] ?? PHASE_DETAIL[phase].subtasks[i].done;
-    setSubState(s => ({ ...s, [k]: !prevDone }));
+    setSubState((s) => ({ ...s, [k]: !prevDone }));
     flashToast(`${PHASE_DETAIL[phase].subtasks[i].label} → ${!prevDone ? "done" : "open"}`);
   };
-  const postPhaseNote = (phase, text) => {
-    postNote({
-      kind: "note", who: "Priya Shah", team: PHASE_DETAIL[phase].owner, sev: "info",
-      title: `[${phase}] ${text.split("\n")[0].slice(0,80)}`,
-      body: text, action: false,
-    });
-  };
-  const createPhaseTask = (phase, { title, team, due }) => {
-    const id = `T-${1100 + Math.floor(Math.random()*900)}`;
-    setPhaseTasks(pt => ({ ...pt, [phase]: [...(pt[phase]||[]), { id, title, team, due, state: "Open" }] }));
-    setEntries(es => [{
-      kind: "task", who: "Priya Shah", team, sev: "info",
+  const postPhaseNote = (phase, text) => postNote({
+    kind: "note", who: "Priya Shah", team: PHASE_DETAIL[phase].owner, sev: "info",
+    title: `[${phase}] ${text.split("\n")[0].slice(0, 80)}`, body: text, action: false,
+  });
+  const createPhaseTask = async (phase, { title, team, due }) => {
+    const id = `T-${Date.now()}`;
+    setPhaseTasks((pt) => ({ ...pt, [phase]: [...(pt[phase] || []), { id, title, team, due, state: "Open" }] }));
+    const t = nowStamp();
+    const entry = { kind: "task", who: "Priya Shah", team, sev: "info",
       title: `[${phase}] Task created: ${title}`,
-      body: `Assigned to ${team} · due ${due}`,
-      action: true, due,
-      t: nowStamp(),
-    }, ...es]);
-    flashToast(`Task ${id} created · assigned to ${team}`);
+      body: `Assigned to ${team} · due ${due}`, action: true, due, t };
+    setEntries((es) => [entry, ...es]);
+    flashToast(`Task created · assigned to ${team}`);
+    if (!SB.configured()) return;
+    try {
+      await Promise.all([
+        SB.insertTask({ id, store_id: STORE.id, title, state: "Open", owner: team, due: due || "—" }),
+        SB.insertEntry({ store_id: STORE.id, ...entry }),
+      ]);
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
-  // apply tweaks → CSS vars + data attributes
+  // ── Hotkeys ───────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.matches?.("input, textarea, select")) return;
+      const map = { "1":"overview","2":"timeline","3":"notes","4":"tasks","5":"comms","6":"files","7":"audit" };
+      if (map[e.key]) setTab(map[e.key]);
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); goToNotes(); }
+      if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setFlagOpen(true); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") { e.preventDefault(); setAiOpen((o) => !o); }
+      if (e.key === "Escape") { setAiOpen(false); setFlagOpen(false); setPhaseOpen(null); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ── Tweaks → CSS ──────────────────────────────────────────
   useEffect(() => {
     const r = document.documentElement;
-    r.dataset.theme   = tweaks.dark    ? "dark"  : "light";
+    r.dataset.theme   = tweaks.dark    ? "dark" : "light";
     r.dataset.density = tweaks.density;
-    r.dataset.showKbd = tweaks.showKbd ? "true"  : "false";
+    r.dataset.showKbd = tweaks.showKbd ? "true" : "false";
     r.style.setProperty("--accent-h", tweaks.accentHue);
   }, [tweaks]);
 
@@ -1356,24 +1667,36 @@ function App() {
       <main className="main">
         <StoreHeader tweaks={tweaks} onNewNote={goToNotes} onFlag={() => setFlagOpen(true)} onPhaseSelect={setPhaseOpen} />
         <TabBar active={tab} onSelect={setTab} />
+
+        {!SB.configured() && (
+          <div className="config-banner">
+            ⚠ Supabase not configured — changes won't persist after refresh.
+            Fill in <code>window.__STOREOPS_CONFIG__</code> in index.html.
+          </div>
+        )}
+        {dbError && (
+          <div className="config-banner config-banner-error">
+            ⚠ Supabase error: {dbError}
+          </div>
+        )}
+
         <div className="content">
           <div className="content-main">
-            {tab === "overview" && <Overview />}
+            {loading && <div className="loading-bar" />}
+            {tab === "overview" && <Overview flags={liveFlags} tasks={liveTasks} />}
             {tab === "timeline" && <Timeline entries={entries} />}
-            {tab === "notes" && <Notes notes={entries.filter((e) => e.kind === "note")} composerRef={composerRef} onPost={postNote} />}
-            {tab === "tasks" && <Tasks />}
-            {tab === "comms" && <Comms />}
-            {tab === "files" && <Files />}
-            {tab === "audit" && <Audit />}
+            {tab === "notes"    && <Notes notes={entries.filter((e) => e.kind === "note")} composerRef={composerRef} onPost={postNote} />}
+            {tab === "tasks"    && <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState} />}
+            {tab === "comms"    && <Comms />}
+            {tab === "files"    && <Files files={liveFiles} onUpload={uploadFile} />}
+            {tab === "audit"    && <Audit />}
           </div>
-          {tweaks.showRail && <RightRail onAskAI={() => setAiOpen(true)} flags={flags} onFlag={() => setFlagOpen(true)} />}
+          {tweaks.showRail && <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} />}
         </div>
       </main>
 
       <button className={cx("ai-fab", aiOpen && "is-open")} onClick={() => setAiOpen((o) => !o)} title="Ask AI (⌘J)">
-        <Icon.spark />
-        <span>Ask AI</span>
-        <Kbd>⌘J</Kbd>
+        <Icon.spark /><span>Ask AI</span><Kbd>⌘J</Kbd>
       </button>
 
       <AIModal open={aiOpen} onClose={() => setAiOpen(false)} />
@@ -1386,30 +1709,30 @@ function App() {
         onPostNote={postPhaseNote}
         onCreateTask={createPhaseTask}
         phaseTasks={phaseOpen ? (phaseTasks[phaseOpen] || []) : []}
-        phaseNotes={phaseOpen ? entries.filter(e => e.kind === "note" && e.title?.startsWith(`[${phaseOpen}]`)) : []}
+        phaseNotes={phaseOpen ? entries.filter((e) => e.kind === "note" && e.title?.startsWith(`[${phaseOpen}]`)) : []}
       />
 
-      {toast &&
-      <div className="toast">
-          <Icon.check />
-          <span>{toast}</span>
+      {toast && (
+        <div className={cx("toast", toast.isError && "toast-error")}>
+          {toast.isError ? <Icon.flag /> : <Icon.check />}
+          <span>{toast.msg}</span>
         </div>
-      }
+      )}
 
       <TweaksPanel title="Tweaks">
         <TweakSection title="Appearance">
-          <TweakToggle label="Dark mode" value={tweaks.dark} onChange={(v) => setTweak("dark", v)} />
-          <TweakRadio label="Density" value={tweaks.density} options={[{ value: "compact", label: "Compact" }, { value: "comfy", label: "Comfy" }]} onChange={(v) => setTweak("density", v)} />
+          <TweakToggle label="Dark mode"  value={tweaks.dark}      onChange={(v) => setTweak("dark", v)} />
+          <TweakRadio  label="Density"    value={tweaks.density}   options={[{value:"compact",label:"Compact"},{value:"comfy",label:"Comfy"}]} onChange={(v) => setTweak("density", v)} />
           <TweakSlider label="Accent hue" value={tweaks.accentHue} min={0} max={360} step={5} onChange={(v) => setTweak("accentHue", v)} />
         </TweakSection>
         <TweakSection title="Layout">
-          <TweakToggle label="Show right rail" value={tweaks.showRail} onChange={(v) => setTweak("showRail", v)} />
-          <TweakToggle label="Show keyboard hints" value={tweaks.showKbd} onChange={(v) => setTweak("showKbd", v)} />
-          <TweakToggle label="Show phase strip" value={tweaks.showPhase} onChange={(v) => setTweak("showPhase", v)} />
+          <TweakToggle label="Show right rail"     value={tweaks.showRail}  onChange={(v) => setTweak("showRail", v)} />
+          <TweakToggle label="Show keyboard hints" value={tweaks.showKbd}   onChange={(v) => setTweak("showKbd", v)} />
+          <TweakToggle label="Show phase strip"    value={tweaks.showPhase} onChange={(v) => setTweak("showPhase", v)} />
         </TweakSection>
       </TweaksPanel>
-    </div>);
-
+    </div>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);

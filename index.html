@@ -4,39 +4,1008 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>StoreOps · Health Record</title>
-
-<!-- ─── Preconnect ─────────────────────────────────────────────────────── -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="styles.css"/>
+<style>
+/* =============================================================
+   StoreOps — Health Record
+   Dense, utilitarian. Linear/Retool-ish. One accent.
+   ============================================================= */
 
-<!-- ─── App config ─────────────────────────────────────────────────────── -->
-<!--
-  Supabase + AI credentials.  For local dev you can paste values directly.
-  For production, inject this block server-side or use a bundler / env vars
-  (see supabase.js for the full options).
+:root {
+  --accent-h: 250;
+  --accent: oklch(0.55 0.15 var(--accent-h));
+  --accent-soft: oklch(0.96 0.025 var(--accent-h));
+  --accent-fg: oklch(0.42 0.16 var(--accent-h));
 
-  NEVER commit real keys to git.  Either:
-    • Use a build-time injection step that reads process.env
-    • Serve this file from an edge function that injects the values
-    • Store keys in a .env file and use Vite / Webpack / esbuild
--->
+  --ok:    oklch(0.62 0.13 155);
+  --warn:  oklch(0.72 0.16 75);
+  --bad:   oklch(0.6  0.18 20);
+  --ok-soft:    oklch(0.96 0.04 155);
+  --warn-soft:  oklch(0.96 0.05 75);
+  --bad-soft:   oklch(0.96 0.04 20);
+
+  /* warm neutrals */
+  --bg:        oklch(0.99 0.003 80);
+  --bg-elev:   oklch(1 0 0);
+  --panel:     oklch(0.985 0.003 80);
+  --rail-bg:   oklch(0.98 0.004 80);
+  --nav-bg:    oklch(0.975 0.004 80);
+  --hover:     oklch(0.965 0.006 80);
+  --active:    oklch(0.94 0.01 var(--accent-h));
+
+  --fg:        oklch(0.24 0.01 80);
+  --fg-2:      oklch(0.36 0.008 80);
+  --muted-fg:  oklch(0.56 0.005 80);
+  --faint:     oklch(0.72 0.004 80);
+
+  --border:    oklch(0.92 0.005 80);
+  --border-2:  oklch(0.88 0.006 80);
+  --border-strong: oklch(0.82 0.008 80);
+
+  --kbd-bg:    oklch(0.97 0.005 80);
+
+  --row: 30px;
+  --row-tight: 26px;
+  --pad-1: 6px;
+  --pad-2: 10px;
+  --pad-3: 14px;
+  --pad-4: 20px;
+  --pad-5: 28px;
+
+  --radius: 4px;
+  --radius-lg: 6px;
+
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --t12: 11.5px;
+  --t13: 12.5px;
+  --t14: 13.5px;
+  --t16: 15px;
+  --t18: 17px;
+  --t22: 22px;
+}
+
+[data-theme="dark"] {
+  --bg:        oklch(0.17 0.005 260);
+  --bg-elev:   oklch(0.2 0.005 260);
+  --panel:     oklch(0.19 0.005 260);
+  --rail-bg:   oklch(0.185 0.005 260);
+  --nav-bg:    oklch(0.165 0.005 260);
+  --hover:     oklch(0.225 0.006 260);
+  --active:    oklch(0.27 0.04 var(--accent-h));
+
+  --fg:        oklch(0.94 0.005 80);
+  --fg-2:      oklch(0.84 0.005 80);
+  --muted-fg:  oklch(0.62 0.005 80);
+  --faint:     oklch(0.46 0.005 80);
+
+  --border:    oklch(0.27 0.006 260);
+  --border-2:  oklch(0.32 0.006 260);
+  --border-strong: oklch(0.4 0.008 260);
+
+  --kbd-bg:    oklch(0.24 0.006 260);
+
+  --accent:    oklch(0.7 0.15 var(--accent-h));
+  --accent-soft: oklch(0.28 0.06 var(--accent-h));
+  --accent-fg:   oklch(0.85 0.13 var(--accent-h));
+
+  --ok-soft:   oklch(0.28 0.05 155);
+  --warn-soft: oklch(0.3 0.06 75);
+  --bad-soft:  oklch(0.3 0.06 20);
+}
+
+[data-density="comfy"] {
+  --row: 36px;
+  --row-tight: 32px;
+  --pad-1: 8px;
+  --pad-2: 12px;
+  --pad-3: 18px;
+  --pad-4: 24px;
+  --pad-5: 32px;
+  --t13: 13px;
+  --t14: 14px;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-ui);
+  font-size: var(--t13);
+  color: var(--fg);
+  background: var(--bg);
+  font-feature-settings: "cv02","cv03","cv04","cv11", "ss01", "tnum";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum"; font-size: 92%; letter-spacing: -0.01em; }
+.muted-tx { color: var(--muted-fg); }
+.grow { flex: 1 1 auto; }
+.hrule { height: 1px; background: var(--border); }
+
+/* APP SHELL */
+.app {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* LEFT NAV */
+.leftnav {
+  background: var(--nav-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.leftnav-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px var(--pad-3); border-bottom: 1px solid var(--border);
+  height: 44px;
+}
+.brand { display: flex; align-items: center; gap: 8px; flex: 1; }
+.brand-mark {
+  width: 14px; height: 14px;
+  background:
+    linear-gradient(135deg, var(--accent) 0 50%, transparent 50% 100%),
+    linear-gradient(135deg, transparent 0 50%, var(--fg) 50% 100%);
+  border-radius: 2px;
+}
+.brand-word { font-weight: 600; letter-spacing: -0.01em; font-size: var(--t14); }
+.iconbtn {
+  background: transparent; border: 1px solid var(--border); border-radius: var(--radius);
+  height: 24px; min-width: 24px; padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--fg-2); cursor: pointer;
+}
+.iconbtn:hover { background: var(--hover); border-color: var(--border-2); color: var(--fg); }
+.iconbtn.xs { height: 20px; min-width: 20px; }
+
+.nav-section-label {
+  padding: 14px var(--pad-3) 4px; font-size: var(--t12);
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg);
+}
+.nav-list { list-style: none; margin: 0; padding: 0 6px; }
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  height: var(--row-tight); padding: 0 8px; border-radius: var(--radius);
+  color: var(--fg-2); cursor: pointer; font-size: var(--t13);
+}
+.nav-item:hover { background: var(--hover); color: var(--fg); }
+.nav-item.is-active { background: var(--active); color: var(--accent-fg); }
+.nav-item.is-active .nav-count { color: var(--accent-fg); }
+.nav-label { flex: 1; }
+.nav-count { color: var(--muted-fg); font-size: var(--t12); }
+
+.nav-store { gap: 8px; padding-right: 4px; }
+.nav-store-id { color: var(--muted-fg); font-size: var(--t12); flex-shrink: 0; }
+.nav-store-name {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--t13);
+}
+
+.leftnav-foot { margin-top: auto; padding: 10px var(--pad-3); border-top: 1px solid var(--border); }
+.me { display: flex; align-items: center; gap: 8px; }
+.me-text { line-height: 1.2; font-size: var(--t13); }
+.me-sub { color: var(--muted-fg); font-size: var(--t12); }
+
+/* AVATAR */
+.avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent-fg);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, var(--border));
+  flex-shrink: 0;
+}
+.avatar-xs { width: 18px; height: 18px; font-size: 9px; }
+.avatar-sm { width: 24px; height: 24px; font-size: 10px; }
+.avatar-internal { background: var(--bg-elev); color: var(--fg-2); border-color: var(--border-2); }
+
+/* DOTS, PILLS, KBD */
+.dot { display: inline-block; border-radius: 50%; flex-shrink: 0; }
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 18px; padding: 0 6px; border-radius: 3px;
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0.02em; text-transform: lowercase;
+  border: 1px solid var(--border-2); background: var(--bg-elev); color: var(--fg-2);
+  white-space: nowrap;
+}
+.pill-blocker { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in oklab, var(--bad) 35%, var(--border)); }
+.pill-watch   { background: var(--warn-soft); color: oklch(0.42 0.12 75); border-color: color-mix(in oklab, var(--warn) 35%, var(--border)); }
+.pill-info    { color: var(--muted-fg); }
+.pill-accent  { background: var(--accent-soft); color: var(--accent-fg); border-color: color-mix(in oklab, var(--accent) 30%, var(--border)); }
+
+[data-theme="dark"] .pill-watch { color: oklch(0.85 0.15 75); }
+
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border: 1px solid var(--border-2); border-bottom-width: 1.5px;
+  border-radius: 3px; background: var(--kbd-bg);
+  color: var(--muted-fg); font-family: var(--font-mono); font-size: 10px;
+  margin-left: 2px;
+}
+[data-theme="dark"] .kbd { background: var(--kbd-bg); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 10px; border-radius: var(--radius);
+  border: 1px solid var(--border-2); background: var(--bg-elev); color: var(--fg);
+  font-size: var(--t13); font-family: inherit; cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--hover); border-color: var(--border-strong); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { border-color: var(--border-2); background: var(--hover); }
+.btn.primary { background: var(--accent); color: white; border-color: color-mix(in oklab, var(--accent) 70%, black); }
+.btn.primary:hover { background: color-mix(in oklab, var(--accent) 90%, black); }
+.btn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.sm { height: 22px; padding: 0 8px; font-size: var(--t12); }
+.btn.full { width: 100%; justify-content: center; }
+.btn.full .kbd { margin-left: auto; }
+
+/* MAIN */
+.main {
+  display: flex; flex-direction: column;
+  min-width: 0; min-height: 0; overflow: hidden;
+  background: var(--bg);
+}
+
+/* HEADER */
+.store-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  padding: 0 var(--pad-4);
+  flex-shrink: 0;
+}
+.crumbs {
+  display: flex; align-items: center; gap: 6px;
+  height: 36px; color: var(--muted-fg); font-size: var(--t12);
+}
+.crumb-current { color: var(--fg); }
+.crumb-tail { color: var(--fg-2); }
+.header-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+.store-title-row {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 6px 0 12px;
+  flex-wrap: wrap;
+}
+.store-title-left { display: flex; align-items: baseline; gap: 10px; flex: 1; min-width: 0; }
+.store-title { margin: 0; font-size: var(--t22); font-weight: 600; letter-spacing: -0.015em; }
+.store-sub { color: var(--muted-fg); font-size: var(--t13); }
+.store-addr { color: var(--fg-2); font-size: var(--t13); }
+.addr-sep { color: var(--faint); }
+.store-title-right { display: flex; gap: 18px; }
+.meta-stat { font-size: var(--t12); display: inline-flex; gap: 5px; align-items: baseline; }
+.meta-k { color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* PHASE STRIP — clickable */
+.phase-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding-bottom: 12px;
+}
+.phase-seg {
+  background: transparent; border: 0; padding: 0; text-align: left;
+  cursor: pointer; font: inherit; color: inherit;
+  border-radius: 3px;
+  transition: background .12s ease;
+}
+.phase-seg:hover { background: var(--hover); }
+.phase-seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.phase-seg .phase-bar {
+  height: 4px; border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+  position: relative;
+}
+.phase-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width .25s ease;
+}
+.phase-seg.is-not-started .phase-bar-fill { background: var(--border-strong); }
+.phase-seg.is-active .phase-bar-fill { background: var(--accent); }
+.phase-seg.is-active.is-blocked .phase-bar-fill { background: var(--bad); }
+.phase-seg.is-active.is-watch .phase-bar-fill { background: var(--warn); }
+.phase-seg.is-complete .phase-bar-fill { background: var(--accent); opacity: .7; }
+.phase-label {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px; padding: 0 4px 4px;
+  font-size: var(--t12); color: var(--muted-fg);
+}
+.phase-num { color: var(--faint); }
+.phase-seg.is-active .phase-label { color: var(--fg); font-weight: 500; }
+.phase-seg.is-complete .phase-label { color: var(--fg-2); }
+.phase-seg.is-not-started .phase-label { color: var(--muted-fg); }
+.phase-check { color: var(--accent); display: inline-flex; }
+.phase-seg .phase-open[data-state="complete"] { background: transparent; color: var(--muted-fg); border-color: var(--border); }
+.phase-seg .phase-open[data-state="not-started"] { background: transparent; color: var(--muted-fg); border-color: var(--border); }
+.phase-seg.is-active:not(.is-blocked) .phase-open { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in oklab, var(--warn) 25%, var(--border)); }
+
+/* mini track legend in rail snapshot */
+.track-mini { display: inline-flex; gap: 3px; align-items: center; }
+.trk { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 3px; font: 600 10px var(--font-mono); border: 1px solid var(--border); background: var(--bg); color: var(--muted-fg); }
+.trk-complete { background: color-mix(in oklab, var(--accent) 15%, var(--bg)); color: var(--accent); border-color: color-mix(in oklab, var(--accent) 30%, var(--border)); }
+.trk-active { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, var(--border)); }
+.trk-blocked { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in oklab, var(--bad) 30%, var(--border)); }
+.trk-idle { background: transparent; color: var(--muted-fg); }
+.phase-open {
+  margin-left: auto; font-size: 10.5px;
+  background: var(--bad-soft); color: var(--bad);
+  padding: 0 5px; border-radius: 8px; line-height: 16px; height: 16px;
+  border: 1px solid color-mix(in oklab, var(--bad) 25%, var(--border));
+}
+
+/* PHASE DRAWER */
+.drawer-scrim {
+  position: fixed; inset: 0;
+  background: color-mix(in oklab, black 18%, transparent);
+  display: flex; justify-content: flex-end;
+  z-index: 95;
+  animation: fadein .12s ease;
+}
+.phase-drawer {
+  width: min(560px, 96vw);
+  height: 100%;
+  background: var(--bg-elev);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -16px 0 40px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column;
+  animation: drawerin .18s ease;
+}
+@keyframes drawerin { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.drawer-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px var(--pad-3); border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.drawer-crumb { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t13); }
+.drawer-crumb svg { color: var(--muted-fg); }
+.drawer-meta { padding: 12px var(--pad-3); border-bottom: 1px solid var(--border); }
+.drawer-summary { margin: 0 0 10px; font-size: var(--t13); color: var(--fg-2); line-height: 1.5; }
+.drawer-meta-row { display: flex; gap: 18px; flex-wrap: wrap; }
+.drawer-tabs {
+  display: flex; gap: 2px; padding: 0 var(--pad-3);
+  border-bottom: 1px solid var(--border); background: var(--bg-elev);
+}
+.drawer-tab {
+  background: transparent; border: 0; padding: 0 10px;
+  height: 36px; font: inherit; color: var(--fg-2); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.drawer-tab:hover { color: var(--fg); }
+.drawer-tab.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.drawer-body { flex: 1; overflow-y: auto; padding: var(--pad-3); }
+.drawer-checklist .check-row { grid-template-columns: 18px 28px 1fr auto auto; }
+.drawer-checklist .check-box { cursor: pointer; }
+.drawer-empty { padding: 20px; text-align: center; color: var(--muted-fg); font-size: var(--t13); border: 1px dashed var(--border-2); border-radius: var(--radius); }
+
+.drawer-mini-composer { border: 1px solid var(--border-2); border-radius: var(--radius); background: var(--bg); margin-bottom: 12px; overflow: hidden; }
+.drawer-mini-composer textarea { width: 100%; border: 0; padding: 10px; resize: vertical; font: inherit; background: transparent; color: var(--fg); outline: none; font-size: var(--t13); }
+.drawer-comp-foot { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--border); background: var(--panel); font-size: var(--t12); }
+.drawer-timeline { font-size: var(--t13); }
+
+.drawer-task-form { border: 1px solid var(--border-2); border-radius: var(--radius); background: var(--bg); padding: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.drawer-task-form input[type="text"], .drawer-task-form > input { border: 1px solid var(--border-2); border-radius: 3px; padding: 6px 10px; font: inherit; font-size: var(--t13); color: var(--fg); background: var(--bg-elev); outline: none; }
+.drawer-task-form input:focus { border-color: var(--accent); }
+.drawer-task-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.drawer-task-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.drawer-task-row-item { display: grid; grid-template-columns: 14px 60px 1fr auto auto; gap: 10px; align-items: center; padding: 8px var(--pad-3); border-bottom: 1px solid var(--border); font-size: var(--t13); }
+.drawer-task-row-item:last-child { border-bottom: 0; }
+.drawer-task-title { color: var(--fg); }
+
+/* TABS */
+.tabs {
+  display: flex; align-items: center; gap: 2px;
+  padding: 0 var(--pad-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  height: 38px;
+  flex-shrink: 0;
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 10px;
+  border: 0; background: transparent; color: var(--fg-2);
+  font: inherit; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--fg); }
+.tab.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.tab-count { color: var(--muted-fg); }
+.tabs-spacer { flex: 1; }
+.tabs-search {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 8px; border: 1px solid var(--border-2);
+  border-radius: var(--radius); background: var(--bg-elev); color: var(--muted-fg);
+  margin-left: 8px;
+}
+.tabs-search input {
+  border: 0; background: transparent; outline: none; width: 180px;
+  font: inherit; color: var(--fg);
+}
+
+/* CONTENT */
+.content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  flex: 1; min-height: 0; overflow: hidden;
+}
+.content-main {
+  overflow-y: auto;
+  padding: var(--pad-4) var(--pad-4) 80px;
+  min-width: 0;
+}
+.content-main::-webkit-scrollbar { width: 10px; height: 10px; }
+.content-main::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 5px; }
+.content-main::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* RIGHT RAIL */
+.rail {
+  border-left: 1px solid var(--border);
+  background: var(--rail-bg);
+  overflow-y: auto;
+  padding: var(--pad-3) var(--pad-3) 80px;
+}
+.rail::-webkit-scrollbar { width: 10px; }
+.rail::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 5px; }
+.rail-section { padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.rail-section:last-child { border-bottom: 0; }
+.rail-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.rail-head h4 { margin: 0; font-size: var(--t12); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); font-weight: 600; }
+
+.ai-summary-text { margin: 0 0 8px; line-height: 1.55; color: var(--fg-2); font-size: var(--t13); }
+.ai-summary-text b { color: var(--fg); font-weight: 600; }
+.ai-cite { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; font-size: var(--t12); }
+.cite {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 6px;
+  background: var(--accent-soft); color: var(--accent-fg);
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, var(--border));
+  border-radius: 3px; cursor: pointer; text-decoration: none;
+  font-size: 10.5px;
+}
+.cite:hover { background: color-mix(in oklab, var(--accent) 18%, var(--bg-elev)); }
+
+.kv { margin: 0; display: grid; grid-template-columns: 100px 1fr; gap: 4px 12px; font-size: var(--t13); }
+.kv dt { color: var(--muted-fg); }
+.kv dd { margin: 0; color: var(--fg); display: flex; align-items: center; gap: 6px; }
+
+.flag-list { list-style: none; padding: 0; margin: 0; }
+.flag-row {
+  display: flex; align-items: center; gap: 8px;
+  height: var(--row-tight); padding: 0 4px;
+  border-bottom: 1px dashed var(--border);
+  font-size: var(--t13);
+}
+.flag-row:last-child { border-bottom: 0; }
+.flag-label { flex: 1; }
+
+.contacts { list-style: none; padding: 0; margin: 0; }
+.contact-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed var(--border); }
+.contact-row:last-child { border-bottom: 0; }
+.contact-text { line-height: 1.25; min-width: 0; }
+.contact-name { font-size: var(--t13); }
+.contact-sub { font-size: var(--t12); color: var(--muted-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* OVERVIEW */
+.overview { display: flex; flex-direction: column; gap: 18px; }
+.snap-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  overflow: hidden;
+}
+.snap {
+  padding: 12px var(--pad-3);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.snap-wide { grid-column: span 2; }
+.snap:nth-child(n+5) { border-bottom: 0; }
+.snap-grid > .snap:last-child,
+.snap-grid > .snap:nth-child(6n) { border-right: 0; }
+.snap-label { font-size: var(--t12); color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.06em; }
+.snap-value { font-size: var(--t18); font-weight: 600; display: flex; align-items: center; gap: 6px; letter-spacing: -0.01em; }
+.snap-sub { font-size: var(--t12); color: var(--muted-fg); }
+
+.block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); }
+.block-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 10px var(--pad-3); border-bottom: 1px solid var(--border);
+}
+.block-head h3 { margin: 0; font-size: var(--t13); font-weight: 600; }
+.block-meta { font-size: var(--t12); color: var(--muted-fg); }
+
+.blocker-list { display: flex; flex-direction: column; }
+.blocker-row {
+  display: grid;
+  grid-template-columns: 24px 14px 1fr auto auto;
+  align-items: center; gap: 10px;
+  padding: 10px var(--pad-3);
+  border-bottom: 1px solid var(--border);
+}
+.blocker-row:last-child { border-bottom: 0; }
+.blocker-num { color: var(--faint); font-size: var(--t12); }
+.blocker-title { font-size: var(--t13); color: var(--fg); }
+.blocker-meta { font-size: var(--t12); color: var(--muted-fg); }
+.blocker-age { color: var(--muted-fg); font-size: var(--t12); }
+
+/* CHECKLIST */
+.checklist { list-style: none; padding: 0; margin: 0; }
+.check-row {
+  display: grid;
+  grid-template-columns: 18px 28px 1fr auto;
+  align-items: center; gap: 10px;
+  height: var(--row);
+  padding: 0 var(--pad-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--t13);
+}
+.check-row:last-child { border-bottom: 0; }
+.check-row.is-done .check-label { color: var(--muted-fg); }
+.check-num { color: var(--faint); font-size: var(--t12); }
+.check-box {
+  width: 14px; height: 14px; border: 1px solid var(--border-strong);
+  border-radius: 3px; background: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: white;
+}
+.check-box.is-on { background: var(--accent); border-color: var(--accent); }
+
+/* TIMELINE */
+.timeline-wrap { display: flex; flex-direction: column; gap: 10px; }
+.timeline-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 9px;
+  border: 1px solid var(--border-2); border-radius: 12px;
+  background: var(--bg-elev); color: var(--fg-2);
+  font: inherit; font-size: var(--t12); cursor: pointer;
+}
+.chip:hover { background: var(--hover); }
+.chip.is-on { border-color: var(--accent); color: var(--accent-fg); background: var(--accent-soft); }
+.chip-n { color: var(--muted-fg); }
+.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.chip.is-on .chip-n { color: var(--accent-fg); }
+
+.timeline {
+  list-style: none; margin: 0; padding: 0;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev);
+  overflow: hidden;
+}
+.tl-item {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.tl-item:last-child { border-bottom: 0; }
+.tl-rail {
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 14px; position: relative;
+}
+.tl-rail::before {
+  content: ""; position: absolute;
+  top: 0; bottom: -1px; left: 50%;
+  width: 1px; background: var(--border);
+}
+.tl-item:first-child .tl-rail::before { top: 14px; }
+.tl-item:last-child .tl-rail::before { bottom: auto; height: 14px; }
+.tl-dot {
+  width: 16px; height: 16px;
+  background: var(--bg-elev);
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+  border: 1px solid var(--border);
+}
+.tl-body { padding: 10px var(--pad-3) 12px 0; min-width: 0; }
+.tl-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; font-size: var(--t12); color: var(--muted-fg); }
+.tl-time { color: var(--fg-2); }
+.tl-kind {
+  font-size: 10px; padding: 1px 5px; border-radius: 2px;
+  background: var(--panel); color: var(--muted-fg);
+  border: 1px solid var(--border);
+  letter-spacing: 0.04em;
+}
+.tl-status .tl-kind { background: var(--bg); }
+.tl-who { color: var(--fg-2); font-weight: 500; }
+.tl-title { font-size: var(--t14); color: var(--fg); margin-bottom: 2px; }
+.tl-text { font-size: var(--t13); color: var(--fg-2); line-height: 1.5; max-width: 70ch; }
+.tl-attach {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 8px; padding: 4px 8px;
+  border: 1px solid var(--border-2); border-radius: 3px;
+  background: var(--panel); font-size: var(--t12); color: var(--fg-2);
+}
+.tl-mentions { margin-top: 6px; display: flex; gap: 6px; }
+.mention {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 6px;
+  background: var(--accent-soft); color: var(--accent-fg);
+  border-radius: 9px; font-size: 11px;
+}
+.tl-status .tl-title { color: var(--muted-fg); font-weight: 400; font-size: var(--t13); }
+.tl-status .tl-body { padding-bottom: 10px; padding-top: 8px; }
+.tl-status .tl-meta { margin-bottom: 0; }
+
+/* TASKS */
+.tasks { display: flex; flex-direction: column; gap: 14px; }
+.tasks-head { display: flex; align-items: baseline; justify-content: space-between; }
+.tasks-head h3 { margin: 0; font-size: var(--t14); font-weight: 600; }
+.task-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.task-col {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 8px; min-height: 200px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.task-col-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px 8px; border-bottom: 1px solid var(--border);
+  font-size: var(--t13); font-weight: 500;
+  margin-bottom: 4px;
+}
+.task-col-n { margin-left: auto; color: var(--muted-fg); }
+.task-card {
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  background: var(--bg); padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px;
+  cursor: pointer;
+}
+.task-card:hover { border-color: var(--border-strong); }
+.task-card.is-blocker { border-left: 2px solid var(--bad); }
+.task-card-top { display: flex; align-items: center; justify-content: space-between; }
+.task-id { color: var(--muted-fg); font-size: var(--t12); }
+.task-card-title { font-size: var(--t13); line-height: 1.35; }
+.task-card-foot { display: flex; align-items: center; gap: 6px; font-size: var(--t12); color: var(--muted-fg); }
+
+/* FILES */
+.files, .audit, .comms, .notes { display: flex; flex-direction: column; gap: 12px; }
+.files-head { display: flex; align-items: baseline; justify-content: space-between; }
+.files-head h3 { margin: 0; font-size: var(--t14); font-weight: 600; }
+
+.ftbl, .audit-tbl {
+  width: 100%; border-collapse: collapse;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-elev); overflow: hidden;
+  font-size: var(--t13);
+}
+.ftbl thead th {
+  text-align: left; font-weight: 500; color: var(--muted-fg);
+  font-size: var(--t12); text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 8px var(--pad-3); background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.ftbl td { padding: 8px var(--pad-3); border-bottom: 1px solid var(--border); }
+.ftbl tr:last-child td { border-bottom: 0; }
+.ftbl tr:hover { background: var(--hover); }
+.ftbl-name { display: inline-flex; align-items: center; gap: 6px; color: var(--fg); }
+.ftbl-actions { width: 30px; text-align: right; }
+
+/* AUDIT */
+.audit-tbl { font-size: var(--t12); }
+.audit-tbl td { padding: 6px var(--pad-3); border-bottom: 1px dashed var(--border); }
+.audit-tbl tr:last-child td { border-bottom: 0; }
+.audit-tbl tr:hover { background: var(--hover); }
+.audit-t { color: var(--muted-fg); width: 150px; }
+.audit-u { color: var(--fg-2); width: 100px; }
+.audit-a { color: var(--accent-fg); width: 130px; }
+.audit-d { color: var(--fg); }
+
+/* COMMS */
+.comms-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); }
+.comm-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 10px var(--pad-3); border-bottom: 1px solid var(--border); }
+.comm-row:last-child { border-bottom: 0; }
+.comm-t { color: var(--muted-fg); font-size: var(--t12); padding-top: 2px; }
+.comm-line1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--t12); color: var(--muted-fg); }
+.comm-from { color: var(--fg-2); }
+.comm-subj { font-size: var(--t13); color: var(--fg); margin: 2px 0 4px; }
+.comm-snip { font-size: var(--t13); line-height: 1.5; max-width: 80ch; }
+.tag {
+  display: inline-flex; align-items: center; height: 16px; padding: 0 5px;
+  border: 1px solid var(--border-2); border-radius: 2px;
+  font-size: 10px; color: var(--muted-fg); background: var(--panel);
+}
+
+/* NOTES COMPOSER */
+.note-composer {
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  background: var(--bg-elev); overflow: hidden;
+}
+.note-comp-head { display: flex; align-items: center; gap: 8px; padding: 8px var(--pad-3); border-bottom: 1px solid var(--border); font-size: var(--t13); }
+.note-title-in {
+  width: 100%; border: 0; border-bottom: 1px dashed var(--border);
+  padding: 8px var(--pad-3); font: inherit; font-size: var(--t14); font-weight: 500;
+  color: var(--fg); background: transparent; outline: none;
+}
+.note-title-in:focus { border-bottom-color: var(--accent); }
+.note-composer textarea {
+  width: 100%; border: 0; resize: vertical;
+  padding: 10px var(--pad-3); font: inherit; color: var(--fg);
+  background: transparent; outline: none;
+  font-size: var(--t13); line-height: 1.5;
+}
+.note-comp-foot { display: flex; align-items: center; gap: 10px; padding: 8px var(--pad-3); border-top: 1px solid var(--border); background: var(--panel); font-size: var(--t12); flex-wrap: wrap; }
+.comp-label { color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10.5px; }
+.check-inline { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-2); cursor: pointer; user-select: none; }
+.check-inline input { display: none; }
+.check-box-sm {
+  width: 14px; height: 14px; border: 1px solid var(--border-strong);
+  border-radius: 3px; background: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center; color: white;
+}
+.check-box-sm.is-on { background: var(--accent); border-color: var(--accent); }
+.action-toggle.is-on { color: var(--accent-fg); font-weight: 500; }
+.due-inline { border: 1px solid var(--border-2); border-radius: 3px; padding: 2px 8px; height: 22px; font: inherit; font-family: var(--font-mono); font-size: 92%; color: var(--fg); background: var(--bg); outline: none; width: 90px; }
+.due-inline:focus { border-color: var(--accent); }
+.select-ish {
+  border: 1px solid var(--border-2); background: var(--bg);
+  border-radius: 3px; padding: 2px 6px; height: 22px;
+  font: inherit; color: var(--fg-2); cursor: pointer;
+}
+
+/* SEVERITY SEGMENT (composer + flag modal) */
+.sev-seg { display: inline-flex; border: 1px solid var(--border-2); border-radius: 3px; overflow: hidden; }
+.sev-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 8px;
+  background: var(--bg); color: var(--muted-fg);
+  border: 0; border-right: 1px solid var(--border-2);
+  font: inherit; font-size: 11.5px; cursor: pointer;
+  text-transform: lowercase;
+}
+.sev-btn:last-child { border-right: 0; }
+.sev-btn:hover { background: var(--hover); color: var(--fg-2); }
+.sev-btn.is-on { color: var(--fg); font-weight: 500; }
+.sev-btn.sev-blocker.is-on { background: var(--bad-soft); color: var(--bad); }
+.sev-btn.sev-watch.is-on { background: var(--warn-soft); color: oklch(0.42 0.12 75); }
+.sev-btn.sev-info.is-on { background: var(--accent-soft); color: var(--accent-fg); }
+[data-theme="dark"] .sev-btn.sev-watch.is-on { color: oklch(0.85 0.15 75); }
+
+/* FLAG MODAL */
+.flag-modal { width: min(540px, 92vw); }
+.flag-body { padding: var(--pad-3) var(--pad-4); display: flex; flex-direction: column; gap: 14px; }
+.field { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 10px; }
+.field-tall { align-items: start; }
+.field-l { font-size: var(--t12); color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 6px; }
+.field input[type="text"], .field input:not([type]) {
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 30px; padding: 0 10px; font: inherit; font-size: var(--t13); color: var(--fg);
+  background: var(--bg); outline: none;
+}
+.field input:focus, .field textarea:focus { border-color: var(--accent); }
+.field textarea {
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  padding: 8px 10px; font: inherit; font-size: var(--t13); color: var(--fg);
+  background: var(--bg); outline: none; resize: vertical; line-height: 1.5;
+}
+.field .sev-seg, .field select { justify-self: start; }
+.flag-foot { display: flex; align-items: center; gap: 8px; padding: 10px var(--pad-3); border-top: 1px solid var(--border); background: var(--panel); }
+
+/* RAIL FLAG ROW: add team chip + tighter layout */
+.flag-row { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 8px; }
+.flag-team { font-size: 10.5px; color: var(--muted-fg); padding: 1px 5px; border: 1px solid var(--border-2); border-radius: 2px; background: var(--panel); }
+.linkbtn { background: transparent; border: 0; color: var(--accent-fg); font: inherit; font-size: var(--t12); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0; }
+.linkbtn:hover { text-decoration: underline; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 64px; right: 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--fg); color: var(--bg-elev);
+  border-radius: 4px; padding: 8px 12px;
+  font-size: var(--t13);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  z-index: 60;
+  animation: toastin .18s ease;
+}
+.toast svg { color: var(--ok); }
+@keyframes toastin { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* AI FAB */
+.ai-fab {
+  position: fixed; bottom: 16px; right: 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 14px;
+  background: var(--fg); color: var(--bg-elev);
+  border: 0; border-radius: 18px; cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.16), 0 1px 2px rgba(0,0,0,0.08);
+  font: inherit; font-size: var(--t13); font-weight: 500;
+  z-index: 50;
+}
+.ai-fab:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.08); }
+.ai-fab .kbd { background: color-mix(in oklab, var(--fg) 80%, white); color: var(--bg-elev); border-color: color-mix(in oklab, var(--fg) 70%, white); }
+.ai-fab.is-open { background: var(--accent); color: white; }
+
+/* AI MODAL */
+.ai-modal-scrim {
+  position: fixed; inset: 0;
+  background: color-mix(in oklab, black 25%, transparent);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  animation: fadein .12s ease;
+}
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.ai-modal {
+  width: min(720px, 92vw);
+  max-height: 80vh;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.ai-modal-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px var(--pad-3); border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.ai-modal-title { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--fg); }
+.ai-modal-title svg { color: var(--accent); }
+.ai-modal-body {
+  flex: 1; overflow-y: auto;
+  padding: var(--pad-3) var(--pad-4);
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 200px;
+}
+.ai-msg { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; }
+.ai-msg-role { font-size: 10px; color: var(--muted-fg); padding-top: 2px; letter-spacing: 0.06em; }
+.ai-msg-text { font-size: var(--t13); line-height: 1.55; color: var(--fg); }
+.ai-msg-user .ai-msg-text { color: var(--fg-2); }
+.ai-typing { display: inline-flex; gap: 3px; padding: 4px 0; }
+.ai-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted-fg); animation: bounce 1s infinite; }
+.ai-typing i:nth-child(2) { animation-delay: 0.15s; }
+.ai-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%,60%,100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }
+
+.ai-modal-suggest {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 8px var(--pad-4); border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+.ai-modal-input {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px var(--pad-3); border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+.ai-modal-input input {
+  flex: 1; border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 32px; padding: 0 12px; font: inherit; font-size: var(--t14); color: var(--fg);
+  background: var(--bg); outline: none;
+}
+.ai-modal-input input:focus { border-color: var(--accent); }
+.ai-modal-input .btn { height: 32px; }
+
+/* RESPONSIVE TRIM */
+@media (max-width: 1280px) {
+  .store-title-right { display: none; }
+  .snap-grid { grid-template-columns: repeat(3, 1fr); }
+  .snap-grid > .snap { border-bottom: 1px solid var(--border); }
+  .snap-grid > .snap:nth-child(6n) { border-right: 0; }
+  .snap-grid > .snap:nth-child(3n) { border-right: 0; }
+  .snap-grid > .snap:nth-last-child(-n+3) { border-bottom: 0; }
+}
+@media (max-width: 1100px) {
+  .content { grid-template-columns: 1fr; }
+  .rail { display: none; }
+}
+
+/* hide kbd hints when toggle off */
+[data-show-kbd="false"] .kbd { display: none; }
+
+/* DRAWER TAB COUNT */
+.tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; font-size: 10px;
+  background: var(--panel); color: var(--muted-fg);
+  border: 1px solid var(--border);
+}
+.drawer-tab.is-active .tab-count {
+  background: var(--accent-soft); color: var(--accent-fg);
+  border-color: color-mix(in oklab, var(--accent) 25%, var(--border));
+}
+
+/* FOCUS VISIBLE — accessibility */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button:focus-visible { outline-offset: 1px; }
+
+/* SCROLLBAR — rail parity */
+.rail::-webkit-scrollbar-track,
+.content-main::-webkit-scrollbar-track { background: transparent; }
+
+/* PRINT */
+@media print {
+  .leftnav, .rail, .ai-fab, .toast, .twk-panel { display: none !important; }
+  .app { grid-template-columns: 1fr; }
+  .content { grid-template-columns: 1fr; }
+}
+
+
+/* CONFIG BANNER */
+.config-banner {
+  background: var(--warn-soft); color: oklch(0.38 0.1 75);
+  border-bottom: 1px solid color-mix(in oklab, var(--warn) 30%, var(--border));
+  padding: 7px var(--pad-4); font-size: var(--t12);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.config-banner code { font-family: var(--font-mono); font-size: 91%; background: color-mix(in oklab, var(--warn) 15%, transparent); padding: 1px 5px; border-radius: 3px; }
+.config-banner-error { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in oklab, var(--bad) 30%, var(--border)); }
+[data-theme="dark"] .config-banner { color: oklch(0.82 0.14 75); }
+
+/* LOADING BAR */
+.loading-bar {
+  height: 2px; background: var(--accent);
+  animation: loadbar 1.2s ease-in-out infinite;
+  position: sticky; top: 0; z-index: 10; border-radius: 1px;
+}
+@keyframes loadbar { 0% { width: 0; opacity: 1; } 70% { width: 90%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
+
+/* NEW TASK FORM */
+.new-task-form {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px; border: 1px solid var(--border-2); border-radius: var(--radius);
+  background: var(--bg-elev); margin-bottom: 4px;
+}
+.new-task-title {
+  flex: 2; min-width: 180px;
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 28px; padding: 0 10px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+}
+.new-task-title:focus { border-color: var(--accent); }
+.new-task-field {
+  flex: 1; min-width: 100px;
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 28px; padding: 0 10px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+}
+.new-task-field:focus { border-color: var(--accent); }
+
+/* TASK CARD STATE CONTROLS */
+.task-card-actions {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  padding-top: 6px; border-top: 1px dashed var(--border);
+  margin-top: 2px;
+}
+.task-card-actions .btn { font-size: 10.5px; height: 20px; padding: 0 7px; }
+
+/* TOAST ERROR */
+.toast-error { background: var(--bad); }
+.toast-error svg { color: white; }
+</style>
 <script>
   window.__STOREOPS_CONFIG__ = {
     supabaseUrl:     "https://tycmdibzkqpqelrslicg.supabase.co",
-    supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5Y21kaWJ6a3FwcWVscnNsaWNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTkwMDgsImV4cCI6MjA5MzQ5NTAwOH0.Zla3_xoX5MtRf38HHOMyxb2ohKCjv--vMtg35ZLW3ys",  // Supabase → Project Settings → API → anon public
-    anthropicKey:    "",   // DEV ONLY — use the ai-proxy Edge Function in prod
+    supabaseAnonKey: "YOUR_ANON_KEY_HERE",
+    anthropicKey:    "",
   };
-</script>
-
-<!-- ─── Tweak defaults ────────────────────────────────────────────────── -->
-<!--
-  The /*EDITMODE-BEGIN*/…/*EDITMODE-END*/ markers let a compatible host
-  (e.g. Claude's artifact runner) persist tweak edits back to disk.
-  Values can be changed here for a permanent default.
--->
-<script>
   window.__TWEAK_DEFAULTS__ = /*EDITMODE-BEGIN*/{
     "dark":       false,
     "density":    "compact",
@@ -46,27 +1015,2098 @@
     "showPhase":  true
   }/*EDITMODE-END*/;
 </script>
-
-<!-- ─── React 18 (UMD, CDN) ──────────────────────────────────────────── -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
-        integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
-        crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
-        integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
-        crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
-        integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
-        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="root"></div>
+<script type="text/babel">
 
-<!--
-  Load order matters with Babel standalone:
-  1. tweaks-panel.jsx  — registers useTweaks + panel components on window
-  2. app.jsx           — main application; references those globals
--->
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="app.jsx"></script>
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-noncommentable=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">{children}</div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+function TweakColor({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <input type="color" className="twk-swatch" value={value}
+             onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+/* global React, ReactDOM, useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakToggle, TweakSelect, TweakSlider */
+const { useState, useMemo, useEffect, useRef } = React;
+
+// ============================================================
+// DATA — single store: Whole Foods Market #1247, Cambridge MA
+// ============================================================
+const STORE = {
+  id: "WFM-1247",
+  retailer: "Whole Foods Market",
+  retailerCode: "WFM",
+  storeNum: "1247",
+  name: "Cambridge — Charles Sq",
+  address: "200 Alewife Brook Pkwy, Cambridge MA 02138",
+  phase: "COI",
+  health: "yellow",
+  owner: "Implementation",
+  ownerPerson: "Priya Shah",
+  nextAction: "Retailer to return signed COI rev. 3",
+  due: "May 6",
+  dueDelta: "+5d",
+  risk: "medium",
+  openedOn: "Mar 14, 2026",
+  scheduledLive: "May 18, 2026",
+  sqft: "48,200",
+  region: "Northeast / NE-04",
+  fixtureCount: 142,
+  skus: 38
+};
+
+const PHASES = ["Planning", "Scheduled", "COI", "Deployment", "Live"];
+function trackState(name, d) {
+  const total = d.subtasks.length;
+  const done = d.subtasks.filter(s => s.done).length;
+  const blocked = d.subtasks.some(s => !s.done && s.flag === "blocker");
+  const watch = d.subtasks.some(s => !s.done && s.flag === "watch");
+  const state = done === total ? "complete" : done === 0 ? "not-started" : "active";
+  return { total, done, blocked, watch, state };
+}
+
+const PHASE_DETAIL = {
+  Planning: {
+    summary: "Scoping, retailer agreement, region + format selection.",
+    owner: "Implementation",
+    completed: "Mar 14 — Apr 1",
+    subtasks: [
+      { label: "Retailer MSA on file", done: true, team: "Legal" },
+      { label: "Region + format confirmed", done: true, team: "Implementation" },
+      { label: "Initial scope sign-off", done: true, team: "Implementation" },
+      { label: "Internal kickoff held", done: true, team: "Implementation" },
+    ],
+  },
+  Scheduled: {
+    summary: "Site survey, planogram, install date.",
+    owner: "Store Planning",
+    completed: "Apr 1 — Apr 22",
+    subtasks: [
+      { label: "Site survey complete", done: true, team: "Deployment" },
+      { label: "Planogram approved", done: true, team: "Store Planning" },
+      { label: "Install date booked", done: true, team: "Deployment" },
+      { label: "Day-of contact tree confirmed", done: true, team: "Support" },
+    ],
+  },
+  COI: {
+    summary: "Certificate of insurance + permits + retailer ops sign-off.",
+    owner: "Implementation",
+    completed: "Apr 22 — in progress (day 10)",
+    subtasks: [
+      { label: "COI rev. 1 submitted", done: true, team: "Legal" },
+      { label: "COI rev. 2 reviewed by retailer", done: true, team: "Legal" },
+      { label: "COI rev. 3 signed by retailer", done: false, team: "Legal", flag: "blocker" },
+      { label: "20A circuit work order filed", done: false, team: "Deployment", flag: "watch" },
+      { label: "Retailer ops sign-off", done: false, team: "Support" },
+    ],
+  },
+  Deployment: {
+    summary: "Install, validation, day-of support.",
+    owner: "Deployment",
+    completed: "— scheduled May 18",
+    subtasks: [
+      { label: "Pre-install walkthrough scheduled", done: false, team: "Deployment" },
+      { label: "Install crew reserved", done: true, team: "Deployment" },
+      { label: "Shipping manifest validated", done: true, team: "Store Planning" },
+      { label: "Day-of install", done: false, team: "Deployment" },
+      { label: "Post-install QA pass", done: false, team: "Support" },
+    ],
+  },
+  Live: {
+    summary: "Store live; first-week performance + handoff to ops.",
+    owner: "Support",
+    completed: "— target May 18",
+    subtasks: [
+      { label: "Go-live confirmation", done: false, team: "Deployment" },
+      { label: "Week-1 performance review", done: false, team: "Support" },
+      { label: "Handoff to retail ops", done: false, team: "Support" },
+    ],
+  },
+};
+
+const TIMELINE = [
+{ t: "Apr 30 · 14:22", who: "Priya Shah", team: "Implementation", kind: "note", sev: "blocker", title: "COI rev. 3 sent — awaiting retailer signature",
+  body: "Sent updated COI to Marcus (WFM legal) reflecting the additional named insured ask from rev. 2. ETA on return is Mon May 4 per Marcus.", action: true, due: "May 6", mentions: ["@deployment"] },
+{ t: "Apr 30 · 11:08", who: "system", team: "—", kind: "status", title: "Health changed: green → yellow", body: "Auto-flag: COI in-flight >10 days." },
+{ t: "Apr 29 · 16:50", who: "Jordan Reyes", team: "Deployment", kind: "task", title: "Reserved install crew (3p) for May 18 0500–1100", body: "Holding; will release May 12 if COI not cleared.", action: false },
+{ t: "Apr 28 · 09:14", who: "Alex Chen", team: "Support", kind: "comm", title: "Email from Marcus Webb (WFM) — re: insurance language",
+  body: "Marcus wants \"each location\" instead of \"site-specific\" in the additional insured clause. Looped legal.", attachment: "RE_ COI rev2 review.eml" },
+{ t: "Apr 27 · 13:02", who: "Priya Shah", team: "Implementation", kind: "note", sev: "watch", title: "Power audit complete — 2 of 6 fixtures need 20A circuits",
+  body: "Existing panel has capacity. Electrician quoted $2,400, falls under retailer-side per MSA §4.2. Flagged Marcus.", attachment: "audit_WFM-1247.pdf" },
+{ t: "Apr 24 · 10:30", who: "Sam Okafor", team: "Store Planning", kind: "note", sev: "info", title: "Planogram approved by category mgr",
+  body: "Final planogram signed off by Lena (WFM grocery). 142 fixtures, endcap at aisle 7 confirmed." },
+{ t: "Apr 22 · 09:00", who: "system", team: "—", kind: "status", title: "Track started: COI" },
+{ t: "Apr 18 · 15:45", who: "Jordan Reyes", team: "Deployment", kind: "note", sev: "info", title: "Site survey complete",
+  body: "Loading dock access confirmed for overnight delivery. No freight elevator restrictions." },
+{ t: "Mar 14 · 08:00", who: "system", team: "—", kind: "status", title: "Store opened in StoreOps" }];
+
+
+const TASKS = [
+{ id: "T-1042", title: "Get signed COI rev. 3 from WFM legal", state: "Waiting", owner: "Priya S.", due: "May 6", flag: "blocker" },
+{ id: "T-1041", title: "Confirm install crew availability May 18", state: "Done", owner: "Jordan R.", due: "Apr 29", flag: null },
+{ id: "T-1043", title: "File 20A circuit work order with retailer ops", state: "Open", owner: "Priya S.", due: "May 8", flag: null },
+{ id: "T-1044", title: "Schedule pre-install walkthrough w/ store mgr", state: "Open", owner: "Jordan R.", due: "May 14", flag: null },
+{ id: "T-1040", title: "Validate planogram against shipping manifest", state: "Done", owner: "Sam O.", due: "Apr 26", flag: null }];
+
+
+const TEAM = [
+  { name: "Priya Shah", role: "Implementation lead", team: "Implementation", load: "primary", initials: "PS", since: "Mar 14" },
+  { name: "Jordan Reyes", role: "Deployment manager", team: "Deployment", load: "active", initials: "JR", since: "Apr 1" },
+  { name: "Sam Okafor", role: "Store planning", team: "Store Planning", load: "active", initials: "SO", since: "Apr 8" },
+  { name: "Alex Chen", role: "Support eng", team: "Support", load: "watching", initials: "AC", since: "Apr 22" },
+  { name: "Mei Tanaka", role: "Legal", team: "Legal", load: "watching", initials: "MT", since: "Apr 24" },
+];
+
+const CONTACTS = [
+{ name: "Marcus Webb", role: "Legal counsel", org: "Whole Foods Market", email: "m.webb@wfm.example", primary: true },
+{ name: "Lena Park", role: "Category mgr — Grocery", org: "Whole Foods Market", email: "l.park@wfm.example" },
+{ name: "Dan Ortiz", role: "Store manager", org: "WFM #1247", email: "d.ortiz@wfm.example" },
+{ name: "Priya Shah", role: "Implementation lead", org: "Internal", email: "priya@storeops.internal", internal: true },
+{ name: "Jordan Reyes", role: "Deployment", org: "Internal", email: "jordan@storeops.internal", internal: true }];
+
+
+const FLAGS = [
+{ label: "COI in-flight", tone: "blocker", since: "10d", team: "Implementation" },
+{ label: "Retailer response needed", tone: "watch", since: "2d", team: "Support" },
+{ label: "Install risk: tight", tone: "watch", since: "—", team: "Deployment" }];
+
+
+const TEAMS = [
+{ id: "Implementation", short: "Impl" },
+{ id: "Deployment", short: "Deploy" },
+{ id: "Support", short: "Spt" },
+{ id: "Store Planning", short: "Plan" },
+{ id: "Legal", short: "Legal" },
+{ id: "Leadership", short: "Lead" }];
+
+
+const FILES = [
+{ name: "COI_WFM-1247_rev3.pdf", size: "412 KB", who: "Priya S.", when: "Apr 30" },
+{ name: "audit_WFM-1247.pdf", size: "2.1 MB", who: "Priya S.", when: "Apr 27" },
+{ name: "planogram_v_final.pdf", size: "5.6 MB", who: "Sam O.", when: "Apr 24" },
+{ name: "site_survey_photos.zip", size: "18 MB", who: "Jordan R.", when: "Apr 18" },
+{ name: "MSA_WFM_2026.pdf", size: "880 KB", who: "system", when: "Mar 14" }];
+
+
+const AI_SUGGESTIONS = [
+{ q: "What's blocking this store?", icon: "blocker" },
+{ q: "Summarize the last 7 days", icon: "summary" },
+{ q: "Draft a status email to retailer", icon: "draft" },
+{ q: "What's the install risk?", icon: "risk" }];
+
+
+// ============================================================
+// PRIMITIVES
+// ============================================================
+const cx = (...c) => c.filter(Boolean).join(" ");
+
+function Dot({ tone = "neutral", size = 8 }) {
+  const map = {
+    green: "var(--ok)", yellow: "var(--warn)", red: "var(--bad)",
+    blocker: "var(--bad)", watch: "var(--warn)", info: "var(--muted-fg)",
+    neutral: "var(--muted-fg)", accent: "var(--accent)"
+  };
+  return <span className="dot" style={{ width: size, height: size, background: map[tone] || map.neutral }} />;
+}
+
+function Pill({ children, tone = "neutral", mono, style }) {
+  return <span className={cx("pill", `pill-${tone}`, mono && "mono")} style={style}>{children}</span>;
+}
+
+function Kbd({ children }) {
+  return <kbd className="kbd">{children}</kbd>;
+}
+
+function HRule() {return <div className="hrule" />;}
+
+// Tiny inline icons (geometric only — no figurative SVG)
+const Icon = {
+  search: () => <svg viewBox="0 0 16 16" width="13" height="13"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M10.5 10.5l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  chev: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M5 6l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  chevR: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M6 4l3 4-3 4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  plus: () => <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  spark: () => <svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 2l1.4 4.2L13.6 8 9.4 9.4 8 14l-1.4-4.6L2 8l4.6-1.8z" fill="currentColor" /></svg>,
+  dot3: () => <svg viewBox="0 0 16 16" width="12" height="12"><circle cx="3" cy="8" r="1.2" fill="currentColor" /><circle cx="8" cy="8" r="1.2" fill="currentColor" /><circle cx="13" cy="8" r="1.2" fill="currentColor" /></svg>,
+  link: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M6 9.5L9.5 6M6.5 4h2a3 3 0 010 6h-1m1 2h-2a3 3 0 010-6h1" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>,
+  paper: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M4 2h5l3 3v9H4z" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="M9 2v3h3" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>,
+  arrowU: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M8 13V4M5 7l3-3 3 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  close: () => <svg viewBox="0 0 16 16" width="12" height="12"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  check: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>,
+  flag: () => <svg viewBox="0 0 16 16" width="11" height="11"><path d="M4 14V3h7l-1.5 2.5L11 8H4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
+  filter: () => <svg viewBox="0 0 16 16" width="12" height="12"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>,
+  send: () => <svg viewBox="0 0 16 16" width="12" height="12"><path d="M2 8l12-5-4 12-2-5z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
+};
+
+// ============================================================
+// LEFT NAV
+// ============================================================
+function LeftNav() {
+  const items = [
+  { label: "Dashboard", k: "D" },
+  { label: "Retailers", k: "R", count: 7 },
+  { label: "Stores", k: "S", count: 248, active: true },
+  { label: "Flags", k: "F", count: 31 },
+  { label: "Tasks", k: "T", count: 84 },
+  { label: "AI chat", k: "A" },
+  { label: "Reports", k: "P" }];
+
+  return (
+    <nav className="leftnav">
+      <div className="leftnav-head">
+        <div className="brand">
+          <span className="brand-mark"></span>
+          <span className="brand-word">storeops</span>
+        </div>
+        <button className="iconbtn" title="Command menu (⌘K)"><Icon.search /></button>
+      </div>
+      <div className="nav-section-label">Workspaces</div>
+      <ul className="nav-list">
+        {items.map((i) =>
+        <li key={i.label} className={cx("nav-item", i.active && "is-active")}>
+            <span className="nav-label">{i.label}</span>
+            {i.count != null && <span className="nav-count mono">{i.count}</span>}
+            <Kbd>{i.k}</Kbd>
+          </li>
+        )}
+      </ul>
+      <div className="nav-section-label">Pinned stores</div>
+      <ul className="nav-list nav-pinned">
+        {[
+        { id: "WFM-1247", label: "Cambridge — Charles Sq", h: "yellow", active: true },
+        { id: "TGT-0883", label: "Austin — Mueller", h: "red" },
+        { id: "WFM-1102", label: "Brooklyn — Bedford", h: "green" },
+        { id: "KRG-2210", label: "Cincinnati — Hyde Park", h: "green" },
+        { id: "TGT-1455", label: "Seattle — Northgate", h: "yellow" }].
+        map((s) =>
+        <li key={s.id} className={cx("nav-item nav-store", s.active && "is-active")}>
+            <Dot tone={s.h} />
+            <span className="mono nav-store-id">{s.id}</span>
+            <span className="nav-store-name">{s.label}</span>
+          </li>
+        )}
+      </ul>
+      <div className="leftnav-foot">
+        <div className="me">
+          <span className="avatar mono">PS</span>
+          <div className="me-text">
+            <div>Priya Shah</div>
+            <div className="me-sub">Implementation · Acme</div>
+          </div>
+        </div>
+      </div>
+    </nav>);
+
+}
+
+// ============================================================
+// HEADER (breadcrumb, store id, track strip, snapshot row)
+// ============================================================
+function StoreHeader({ tweaks, onNewNote, onFlag, onPhaseSelect }) {
+  return (
+    <header className="store-header">
+      <div className="crumbs">
+        <span>Stores</span>
+        <Icon.chevR />
+        <span>{STORE.retailer}</span>
+        <Icon.chevR />
+        <span className="crumb-current mono">{STORE.id}</span>
+        <span className="crumb-tail">· {STORE.name}</span>
+        <div className="header-actions">
+          <button className="btn ghost" onClick={onFlag}><Icon.flag /> Flag <Kbd>F</Kbd></button>
+          <button className="btn ghost"><Icon.link /> Copy link</button>
+          <button className="btn ghost"><Icon.dot3 /></button>
+          <button className="btn primary" onClick={onNewNote}><Icon.plus /> New note <Kbd>N</Kbd></button>
+        </div>
+      </div>
+
+      <div className="store-title-row">
+        <div className="store-title-left">
+          <Dot tone={STORE.health} size={10} />
+          <h1 className="store-title">{STORE.retailer} #{STORE.storeNum}</h1>
+          <span className="store-sub mono">{STORE.id}</span>
+          <span className="addr-sep">·</span>
+          <span className="store-addr">{STORE.address}</span>
+        </div>
+        <div className="store-title-right">
+          <span className="meta-stat"><span className="meta-k">INSTALL DATE</span> <span className="mono">{STORE.openedOn}</span></span>
+          <span className="meta-stat"><span className="meta-k">SITE SURVEY</span> <span className="mono">{STORE.scheduledLive}</span></span>
+          <span className="meta-stat"><span className="meta-k">Sqft</span> <span className="mono">{STORE.sqft}</span></span>
+          <span className="meta-stat"><span className="meta-k">Region</span> <span className="mono">{STORE.region}</span></span>
+        </div>
+      </div>
+
+      {tweaks.showPhase && <PhaseStrip onSelect={onPhaseSelect} />}
+    </header>);
+
+}
+
+function PhaseStrip({ onSelect }) {
+  return (
+    <div className="phase-strip" role="list" aria-label="Workstream tracks">
+      {PHASES.map((p) => {
+        const d = PHASE_DETAIL[p];
+        const { total, done, blocked, watch, state } = trackState(p, d);
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        return (
+          <button key={p} role="listitem"
+            className={cx("phase-seg", `is-${state}`, blocked && "is-blocked", watch && !blocked && state === "active" && "is-watch")}
+            onClick={() => onSelect(p)}
+            title={`${p} — ${done}/${total} subtasks${blocked?" · blocker":watch?" · watch":""}`}>
+            <div className="phase-bar"><div className="phase-bar-fill" style={{ width: pct + "%" }} /></div>
+            <div className="phase-label">
+              <span>{p}</span>
+              {state === "complete" && <span className="phase-check"><Icon.check /></span>}
+              {blocked && <Dot tone="red" />}
+              {!blocked && watch && state === "active" && <Dot tone="yellow" />}
+              <span className="phase-open mono" data-state={state}>{done}/{total}</span>
+            </div>
+          </button>);
+      })}
+    </div>);
+}
+
+// ============================================================
+// TRACK DRAWER
+// ============================================================
+function PhaseDrawer({ phase, onClose, onPostNote, onCreateTask, onToggleSub, subState, phaseTasks, phaseNotes }) {
+  const [tab, setTab] = useState("checklist");
+  const [noteText, setNoteText] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskTeam, setTaskTeam] = useState("Implementation");
+  const [taskDue, setTaskDue] = useState("");
+
+  useEffect(() => {
+    if (!phase) return;
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, onClose]);
+
+  if (!phase) return null;
+  const d = PHASE_DETAIL[phase];
+  const subs = d.subtasks.map((s, i) => ({ ...s, done: subState[`${phase}:${i}`] ?? s.done, _i: i }));
+  const completed = subs.filter(s => s.done).length;
+  const liveBlocked = subs.some(s => !s.done && s.flag === "blocker");
+  const liveWatch = subs.some(s => !s.done && s.flag === "watch");
+  const state = completed === subs.length ? "complete" : completed === 0 ? "not-started" : "active";
+  const stateLabel = state === "complete" ? "complete" : state === "not-started" ? "not started" : (liveBlocked ? "blocked" : liveWatch ? "at risk" : "active");
+
+  const submitNote = (e) => {
+    e.preventDefault();
+    if (!noteText.trim()) return;
+    onPostNote(phase, noteText.trim());
+    setNoteText("");
+  };
+  const submitTask = (e) => {
+    e.preventDefault();
+    if (!taskTitle.trim()) return;
+    onCreateTask(phase, { title: taskTitle.trim(), team: taskTeam, due: taskDue.trim() || "—" });
+    setTaskTitle(""); setTaskDue("");
+  };
+
+  return (
+    <div className="drawer-scrim" onMouseDown={onClose}>
+      <aside className="phase-drawer" onMouseDown={e => e.stopPropagation()}>
+        <header className="drawer-head">
+          <div className="drawer-crumb mono">
+            <span className="muted-tx">Track</span>
+            <Icon.chevR/>
+            <span>{phase}</span>
+            <Pill tone={state==="complete"?"info":liveBlocked?"blocker":liveWatch?"watch":state==="not-started"?"info":"watch"}>{stateLabel}</Pill>
+          </div>
+          <div className="grow"/>
+          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button className="iconbtn" onClick={onClose}><Icon.close/></button>
+        </header>
+        <div className="drawer-meta">
+          <p className="drawer-summary">{d.summary}</p>
+          <div className="drawer-meta-row">
+            <span className="meta-stat"><span className="meta-k">Owner</span> <span>{d.owner}</span></span>
+            <span className="meta-stat"><span className="meta-k">When</span> <span className="mono">{d.completed}</span></span>
+            <span className="meta-stat"><span className="meta-k">Progress</span> <span className="mono">{completed}/{subs.length}</span></span>
+          </div>
+        </div>
+        <div className="drawer-tabs">
+          {[
+            { id: "checklist", label: "Checklist", n: subs.length },
+            { id: "notes", label: "Notes", n: phaseNotes.length },
+            { id: "tasks", label: "Tasks", n: phaseTasks.length },
+          ].map(t => (
+            <button key={t.id} className={cx("drawer-tab", tab===t.id && "is-active")} onClick={()=>setTab(t.id)}>
+              {t.label} <span className="mono tab-count">{t.n}</span>
+            </button>
+          ))}
+        </div>
+        <div className="drawer-body">
+          {tab === "checklist" && (
+            <ul className="checklist drawer-checklist">
+              {subs.map((s) => (
+                <li key={s._i} className={cx("check-row", s.done && "is-done")}>
+                  <button className={cx("check-box", s.done && "is-on")} onClick={() => onToggleSub(phase, s._i)}>
+                    {s.done && <Icon.check/>}
+                  </button>
+                  <span className="mono check-num">{String(s._i+1).padStart(2,"0")}</span>
+                  <span className="check-label">{s.label}</span>
+                  <span className="flag-team mono">{s.team}</span>
+                  {s.flag && !s.done && <Pill tone={s.flag}>{s.flag}</Pill>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {tab === "notes" && (
+            <div className="drawer-notes">
+              <form className="drawer-mini-composer" onSubmit={submitNote}>
+                <textarea
+                  rows={2}
+                  placeholder={`Add a note for ${phase}…`}
+                  value={noteText}
+                  onChange={e=>setNoteText(e.target.value)}
+                  onKeyDown={e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter"){ submitNote(e);} }}
+                />
+                <div className="drawer-comp-foot">
+                  <span className="muted-tx mono"><Kbd>⌘</Kbd>+<Kbd>↵</Kbd> post</span>
+                  <div className="grow"/>
+                  <button className="btn primary" disabled={!noteText.trim()}><Icon.arrowU/> Post</button>
+                </div>
+              </form>
+              {phaseNotes.length === 0 ? (
+                <div className="drawer-empty">No notes scoped to this phase yet.</div>
+              ) : (
+                <ol className="timeline drawer-timeline">
+                  {phaseNotes.map((e, i) => <TimelineItem key={i} e={e}/>)}
+                </ol>
+              )}
+            </div>
+          )}
+          {tab === "tasks" && (
+            <div className="drawer-tasks">
+              <form className="drawer-task-form" onSubmit={submitTask}>
+                <input placeholder={`New task for ${phase}…`} value={taskTitle} onChange={e=>setTaskTitle(e.target.value)}/>
+                <div className="drawer-task-row">
+                  <span className="comp-label">assign</span>
+                  <select className="select-ish mono" value={taskTeam} onChange={e=>setTaskTeam(e.target.value)}>
+                    {TEAMS.map(t => <option key={t.id}>{t.id}</option>)}
+                  </select>
+                  <span className="comp-label">due</span>
+                  <input className="due-inline mono" placeholder="May 6" value={taskDue} onChange={e=>setTaskDue(e.target.value)}/>
+                  <div className="grow"/>
+                  <button className="btn primary" disabled={!taskTitle.trim()}><Icon.plus/> Create task</button>
+                </div>
+              </form>
+              {phaseTasks.length === 0 ? (
+                <div className="drawer-empty">No tasks scoped to this phase yet.</div>
+              ) : (
+                <ul className="drawer-task-list">
+                  {phaseTasks.map((t, i) => (
+                    <li key={i} className="drawer-task-row-item">
+                      <Dot tone={t.state==="Done"?"green":t.state==="Waiting"?"yellow":"neutral"}/>
+                      <span className="mono task-id">{t.id}</span>
+                      <span className="drawer-task-title">{t.title}</span>
+                      <span className="flag-team mono">{t.team || t.owner}</span>
+                      <span className="muted-tx mono">{t.due}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+// ============================================================
+// TABS
+// ============================================================
+const TABS = [
+{ id: "overview", label: "Overview", k: "1" },
+{ id: "timeline", label: "Timeline", k: "2", count: TIMELINE.length },
+{ id: "notes", label: "Notes", k: "3", count: 18 },
+{ id: "tasks", label: "Tasks", k: "4", count: TASKS.filter((t) => t.state !== "Done").length },
+{ id: "comms", label: "Comms", k: "5", count: 6 },
+{ id: "files", label: "Files", k: "6", count: FILES.length },
+{ id: "audit", label: "Audit", k: "7" }];
+
+
+function TabBar({ active, onSelect }) {
+  return (
+    <div className="tabs">
+      {TABS.map((t) =>
+      <button key={t.id} className={cx("tab", active === t.id && "is-active")} onClick={() => onSelect(t.id)}>
+          {t.label}
+          {t.count != null && <span className="tab-count mono">{t.count}</span>}
+          <Kbd>{t.k}</Kbd>
+        </button>
+      )}
+      <div className="tabs-spacer" />
+      <button className="btn ghost sm"><Icon.filter /> Filter</button>
+      <div className="tabs-search">
+        <Icon.search />
+        <input placeholder="Search this store…" />
+        <Kbd>/</Kbd>
+      </div>
+    </div>);
+
+}
+
+// ============================================================
+// OVERVIEW (snapshot blocks)
+// ============================================================
+function Overview() {
+  return (
+    <div className="overview">
+      <div className="snap-grid">
+        <SnapBlock label="Active tracks" value="COI · Deployment" sub="2 of 5 in flight" tone="yellow" />
+        <SnapBlock label="Health" value="Yellow" sub="Auto-flagged Apr 30" tone="yellow" />
+        <SnapBlock label="Owner" value="Implementation" sub="Priya Shah" />
+        <SnapBlock label="Next action" value="Sign COI rev. 3" sub={`Due ${STORE.due} · ${STORE.dueDelta}`} tone="yellow" wide />
+        <SnapBlock label="Risk level" value="Medium" sub="Install crew held until May 12" tone="yellow" />
+        <SnapBlock label="Days to go-live" value="18" sub={`${STORE.scheduledLive}`} mono />
+      </div>
+
+      <section className="block">
+        <header className="block-head">
+          <h3>Active blockers</h3>
+          <span className="block-meta mono">2 open · 1 awaiting external</span>
+        </header>
+        <div className="blocker-list">
+          <BlockerRow num="01" title="COI rev. 3 — awaiting retailer signature" who="Marcus Webb · WFM Legal" age="3d" tone="blocker" />
+          <BlockerRow num="02" title="20A circuit work order — needs retailer ops sign-off" who="Dan Ortiz · WFM Store mgr" age="—" tone="watch" />
+        </div>
+      </section>
+
+      <section className="block">
+        <header className="block-head">
+          <h3>Readiness checklist</h3>
+          <span className="block-meta mono">2/3 complete</span>
+        </header>
+        <ul className="checklist">
+          {[
+          ["Site Survey", true],
+          ["Store Design", true],
+          ["COI/Permits", false, "blocker"]].
+          map(([label, done, tone], i) =>
+          <li key={i} className={cx("check-row", done && "is-done")}>
+              <span className={cx("check-box", done && "is-on")}>{done && <Icon.check />}</span>
+              <span className="mono check-num">{String(i + 1).padStart(2, "0")}</span>
+              <span className="check-label">{label}</span>
+              {tone && !done && <Pill tone={tone}>{tone === "blocker" ? "blocker" : "watch"}</Pill>}
+            </li>
+          )}
+        </ul>
+      </section>
+    </div>);
+
+}
+
+function SnapBlock({ label, value, sub, tone, wide, mono }) {
+  return (
+    <div className={cx("snap", wide && "snap-wide")}>
+      <div className="snap-label">{label}</div>
+      <div className={cx("snap-value", mono && "mono")}>
+        {tone && <Dot tone={tone} />}
+        <span>{value}</span>
+      </div>
+      <div className="snap-sub">{sub}</div>
+    </div>);
+
+}
+
+function BlockerRow({ num, title, who, age, tone }) {
+  return (
+    <div className="blocker-row">
+      <span className="mono blocker-num">{num}</span>
+      <Dot tone={tone} />
+      <div className="blocker-body">
+        <div className="blocker-title">{title}</div>
+        <div className="blocker-meta">{who}</div>
+      </div>
+      <span className="mono blocker-age">{age}</span>
+      <button className="btn ghost sm">Resolve</button>
+    </div>);
+
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+function Timeline({ entries }) {
+  const [filter, setFilter] = useState("all");
+  const filters = [
+  { id: "all", label: "All", n: entries.length },
+  { id: "note", label: "Notes", n: entries.filter((e) => e.kind === "note").length },
+  { id: "task", label: "Tasks", n: entries.filter((e) => e.kind === "task").length },
+  { id: "comm", label: "Comms", n: entries.filter((e) => e.kind === "comm").length },
+  { id: "status", label: "Status", n: entries.filter((e) => e.kind === "status").length }];
+
+  const list = filter === "all" ? entries : entries.filter((e) => e.kind === filter);
+  return (
+    <div className="timeline-wrap">
+      <div className="timeline-filter">
+        {filters.map((f) =>
+        <button key={f.id} className={cx("chip", filter === f.id && "is-on")} onClick={() => setFilter(f.id)}>
+            {f.label} <span className="mono chip-n">{f.n}</span>
+          </button>
+        )}
+        <div className="grow" />
+        <span className="muted-tx mono">Sorted: newest first</span>
+      </div>
+      <ol className="timeline">
+        {list.map((e, i) => <TimelineItem key={i} e={e} />)}
+      </ol>
+    </div>);
+
+}
+
+function TimelineItem({ e }) {
+  const KIND_LABEL = { note: "NOTE", task: "TASK", comm: "COMM", status: "STATUS" };
+  return (
+    <li className={cx("tl-item", `tl-${e.kind}`)}>
+      <div className="tl-rail">
+        <span className="tl-dot">
+          <Dot tone={e.sev === "blocker" ? "blocker" : e.sev === "watch" ? "watch" : e.kind === "status" ? "neutral" : "accent"} size={9} />
+        </span>
+      </div>
+      <div className="tl-body">
+        <div className="tl-meta">
+          <span className="mono tl-time">{e.t}</span>
+          <span className="tl-kind mono">{KIND_LABEL[e.kind]}</span>
+          {e.who !== "system" ?
+          <><span className="avatar avatar-xs mono">{e.who.split(" ").map((s) => s[0]).join("").slice(0, 2)}</span>
+            <span className="tl-who">{e.who}</span>
+            <span className="muted-tx">·</span>
+            <span className="muted-tx">{e.team}</span></> :
+          <span className="muted-tx">system</span>}
+          {e.sev && e.sev !== "info" && <Pill tone={e.sev}>{e.sev}</Pill>}
+          {e.action && <Pill tone="accent">action · due {e.due}</Pill>}
+          <div className="grow" />
+          <button className="iconbtn xs" title="More"><Icon.dot3 /></button>
+        </div>
+        <div className="tl-title">{e.title}</div>
+        {e.body && <div className="tl-text">{e.body}</div>}
+        {e.attachment &&
+        <div className="tl-attach">
+            <Icon.paper />
+            <span className="mono">{e.attachment}</span>
+          </div>
+        }
+        {e.mentions &&
+        <div className="tl-mentions">
+            {e.mentions.map((m) => <span key={m} className="mention mono">{m}</span>)}
+          </div>
+        }
+      </div>
+    </li>);
+
+}
+
+// ============================================================
+// AUDIT
+// ============================================================
+function Audit() {
+  const rows = [
+  ["Apr 30 14:22:11", "priya@", "note.create", "id=N-2241 sev=blocker action=true"],
+  ["Apr 30 11:08:02", "system", "health.change", "from=green to=yellow reason=coi_age>10"],
+  ["Apr 29 16:50:43", "jordan@", "task.update", "id=T-1041 state=Open→Done"],
+  ["Apr 28 09:14:20", "alex@", "comm.ingest", "src=email msg-id=<webb@wfm…>"],
+  ["Apr 27 13:02:09", "priya@", "file.upload", "name=audit_WFM-1247.pdf size=2.1MB"],
+  ["Apr 24 10:30:00", "sam@", "note.create", "id=N-2188 sev=info"],
+  ["Apr 22 09:00:00", "system", "phase.change", "from=Scheduled to=COI"]];
+
+  return (
+    <div className="audit">
+      <div className="files-head">
+        <h3>Audit log <span className="muted-tx mono">{rows.length} of 312</span></h3>
+        <span className="muted-tx mono">immutable · exportable</span>
+      </div>
+      <table className="audit-tbl mono">
+        <tbody>
+          {rows.map((r, i) =>
+          <tr key={i}>
+              <td className="audit-t">{r[0]}</td>
+              <td className="audit-u">{r[1]}</td>
+              <td className="audit-a">{r[2]}</td>
+              <td className="audit-d">{r[3]}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>);
+
+}
+
+// ============================================================
+// RIGHT RAIL
+// ============================================================
+function RightRail({ onAskAI, flags, onFlag }) {
+  return (
+    <aside className="rail">
+      <section className="rail-section">
+        <div className="rail-head">
+          <h4>AI summary</h4>
+          <span className="muted-tx mono">updated 3m ago</span>
+        </div>
+        <p className="ai-summary-text">
+          Store is in <b>COI day 10</b> (target ≤7), health auto-flagged yellow Apr 30. Single
+          external blocker: <b>signed COI rev. 3</b> from WFM legal (Marcus Webb), expected back Mon May 4.
+          Install crew is held for May 18; release date is May 12 if COI doesn't clear.
+        </p>
+        <div className="ai-cite">
+          <span className="muted-tx mono">sources:</span>
+          <a className="cite mono">N-2241</a>
+          <a className="cite mono">N-2235</a>
+          <a className="cite mono">T-1041</a>
+        </div>
+        <button className="btn primary full" onClick={onAskAI}>
+          <Icon.spark /> Ask about this store <Kbd>⌘J</Kbd>
+        </button>
+      </section>
+
+      <section className="rail-section">
+        <div className="rail-head"><h4>Snapshot</h4></div>
+        <dl className="kv">
+          <dt>Tracks</dt><dd className="track-mini">
+            <span className="trk trk-complete" title="Planning · complete">P</span>
+            <span className="trk trk-complete" title="Scheduled · complete">S</span>
+            <span className="trk trk-blocked" title="COI · blocked">C</span>
+            <span className="trk trk-active" title="Deployment · active">D</span>
+            <span className="trk trk-idle" title="Live · not started">L</span>
+          </dd>
+          <dt>Owner</dt><dd>Implementation · Priya S.</dd>
+          <dt>Next action</dt><dd>Sign COI rev. 3</dd>
+          <dt>Due</dt><dd className="mono">May 6 <span className="muted-tx">· +5d</span></dd>
+          <dt>Risk</dt><dd><Dot tone="yellow" /> Medium</dd>
+          <dt>Go-live</dt><dd className="mono">May 18, 2026</dd>
+          <dt>Last activity</dt><dd className="mono">3m ago</dd>
+        </dl>
+      </section>
+
+      <section className="rail-section">
+        <div className="rail-head">
+          <h4>Flags <span className="muted-tx mono">{flags.length}</span></h4>
+          <button className="linkbtn" onClick={onFlag}><Icon.plus /> Raise</button>
+        </div>
+        <ul className="flag-list">
+          {flags.map((f, i) =>
+          <li key={i} className="flag-row">
+              <Dot tone={f.tone} />
+              <span className="flag-label">{f.label}</span>
+              <span className="flag-team mono">{f.team}</span>
+              <span className="muted-tx mono">{f.since}</span>
+            </li>
+          )}
+        </ul>
+      </section>
+
+      <section className="rail-section">
+        <div className="rail-head"><h4>Team <span className="muted-tx mono">{TEAM.length}</span></h4></div>
+        <ul className="contacts">
+          {TEAM.map((m) =>
+          <li key={m.name} className="contact-row">
+              <span className={cx("avatar avatar-sm mono", "avatar-internal")}>
+                {m.initials}
+              </span>
+              <div className="contact-text">
+                <div className="contact-name">{m.name} {m.load === "primary" && <span className="muted-tx mono">· lead</span>}</div>
+                <div className="contact-sub">{m.role} · <span className="mono muted-tx">since {m.since}</span></div>
+              </div>
+              <Pill tone={m.load === "primary" ? "watch" : m.load === "active" ? "info" : "info"}>{m.load}</Pill>
+            </li>
+          )}
+        </ul>
+      </section>
+    </aside>);
+
+}
+
+// ============================================================
+// AI MODAL (on-demand)
+// ============================================================
+function AIModal({ open, onClose }) {
+  const [messages, setMessages] = useState([
+  { role: "ai", text: `Asking about ${STORE.retailer} #${STORE.storeNum}. I have access to all notes, tasks, comms, and files for this store.` }]
+  );
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const scrollRef = useRef();
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, busy]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {if (e.key === "Escape") onClose();};
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const send = async (q) => {
+    const text = (q ?? input).trim();
+    if (!text || busy) return;
+    setMessages((m) => [...m, { role: "user", text }]);
+    setInput("");
+    setBusy(true);
+    try {
+      const ctx = `You are StoreOps AI, an assistant grounded in a single store's records. Answer concisely (3-6 sentences max), in plain prose, and cite specific records by inline tag like [N-2241] or [T-1041] when relevant. Never invent records.
+
+STORE: ${STORE.retailer} #${STORE.storeNum} (${STORE.id}) — ${STORE.address}
+PHASE: COI day 10 (target ≤7), health=yellow auto-flagged Apr 30
+OWNER: Implementation / Priya Shah
+NEXT: Signed COI rev. 3 from WFM legal due May 6
+RISK: Medium. Install crew reserved May 18 0500-1100, releases May 12 if COI not cleared.
+
+KEY RECORDS:
+- [N-2241] Apr 30: COI rev. 3 sent to Marcus Webb (WFM legal); expected back Mon May 4. action=true sev=blocker
+- [N-2235] Apr 27: Power audit — 2/6 fixtures need 20A circuits; retailer-side per MSA §4.2; quoted $2,400. sev=watch
+- [N-2230] Apr 24: Planogram approved by Lena Park (WFM grocery cat mgr). 142 fixtures.
+- [T-1041] Apr 29: Install crew reserved for May 18. state=Done
+- [T-1042] OPEN: Get signed COI rev. 3 from WFM legal. due=May 6. flag=blocker
+- [T-1043] OPEN: File 20A circuit work order with retailer ops. due=May 8
+- [C-0418] Apr 28: Email from Marcus Webb re: insurance language ("each location" vs "site-specific")
+
+CONTACTS: Marcus Webb (WFM legal, primary), Lena Park (WFM grocery cat mgr), Dan Ortiz (WFM #1247 store mgr), Priya Shah (impl lead), Jordan Reyes (deployment)
+
+Question: ${text}`;
+
+      // ── Call the Anthropic API ─────────────────────────────────────────────
+      // In production, proxy through a Supabase Edge Function so your key
+      // stays server-side.  Set window.__STOREOPS_CONFIG__.anthropicKey for
+      // local dev, or deploy /supabase/functions/ai-proxy/index.ts (see the
+      // README) and leave anthropicKey blank.
+      // ──────────────────────────────────────────────────────────────────────
+      const cfg   = window.__STOREOPS_CONFIG__ || {};
+      const apiKey = cfg.anthropicKey || "";
+      const proxyUrl = cfg.supabaseUrl
+        ? `${cfg.supabaseUrl}/functions/v1/ai-proxy`
+        : null;
+
+      let reply;
+      if (apiKey) {
+        // Direct dev call (key in browser config — never do this in production)
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 800,
+            messages: [{ role: "user", content: ctx }],
+          }),
+        });
+        if (!res.ok) throw new Error("anthropic_error");
+        const data = await res.json();
+        reply = data.content?.[0]?.text ?? "(empty response)";
+      } else if (proxyUrl) {
+        // Production path: Supabase Edge Function proxy
+        const res = await fetch(proxyUrl, {
+          method: "POST",
+          headers: {
+            apikey: cfg.supabaseAnonKey || "",
+            Authorization: `Bearer ${cfg.supabaseAnonKey || ""}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt: ctx }),
+        });
+        if (!res.ok) throw new Error("proxy_error");
+        const data = await res.json();
+        reply = data.content?.[0]?.text ?? "(empty response)";
+      } else {
+        // Fallback: demo mode
+        reply = "AI is not configured yet. Add your Supabase URL + anon key, then deploy the ai-proxy Edge Function (or set anthropicKey for local dev). See supabase.js for instructions.";
+      }
+
+      setMessages((m) => [...m, { role: "ai", text: reply }]);
+    } catch (err) {
+      setMessages((m) => [...m, { role: "ai", text: `Couldn't reach the model just now (${err.message}). Try again in a moment.` }]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) return null;
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <div className="ai-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title">
+            <Icon.spark />
+            <span>StoreOps AI</span>
+            <span className="muted-tx">·</span>
+            <span className="muted-tx mono">scope: {STORE.id}</span>
+          </div>
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>esc</Kbd> to close</span>
+          <button className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+
+        <div className="ai-modal-body" ref={scrollRef}>
+          {messages.map((m, i) =>
+          <div key={i} className={cx("ai-msg", `ai-msg-${m.role}`)}>
+              <div className="ai-msg-role mono">{m.role === "ai" ? "AI" : "YOU"}</div>
+              <div className="ai-msg-text">{renderWithCitations(m.text)}</div>
+            </div>
+          )}
+          {busy &&
+          <div className="ai-msg ai-msg-ai">
+              <div className="ai-msg-role mono">AI</div>
+              <div className="ai-msg-text"><span className="ai-typing"><i /><i /><i /></span></div>
+            </div>
+          }
+        </div>
+
+        <div className="ai-modal-suggest">
+          {AI_SUGGESTIONS.map((s) =>
+          <button key={s.q} className="chip" onClick={() => send(s.q)} disabled={busy}>{s.q}</button>
+          )}
+        </div>
+
+        <form className="ai-modal-input" onSubmit={(e) => {e.preventDefault();send();}}>
+          <input
+            placeholder="Ask anything about this store…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            autoFocus
+            disabled={busy} />
+          
+          <button className="btn primary" type="submit" disabled={busy || !input.trim()}>
+            <Icon.send /> Send <Kbd>↵</Kbd>
+          </button>
+        </form>
+      </div>
+    </div>);
+
+}
+
+function renderWithCitations(text) {
+  // wrap [X-1234] tags in monospace cite chips
+  const parts = text.split(/(\[[A-Z]-\d+\])/g);
+  return parts.map((p, i) =>
+  /^\[[A-Z]-\d+\]$/.test(p) ?
+  <a key={i} className="cite mono">{p.slice(1, -1)}</a> :
+  <span key={i}>{p}</span>
+  );
+}
+
+// ============================================================
+// COMMS
+// ============================================================
+function Comms() {
+  const items = [
+  { from: "Marcus Webb <m.webb@wfm.example>", subj: "RE: COI rev. 2 — language tweak", t: "Apr 28 09:14", snippet: "Hi Priya — small ask: in §3 can we say \"each location\" rather than \"site-specific\"? Otherwise looks good. Will sign once updated.", tags: ["legal", "coi"] },
+  { from: "Lena Park <l.park@wfm.example>", subj: "Planogram v_final — approved", t: "Apr 24 10:28", snippet: "Approved. Endcap at aisle 7 confirmed. Loop me when install dates are firm.", tags: ["category"] },
+  { from: "Call summary · Dan Ortiz", subj: "Pre-install logistics — 18 min", t: "Apr 22 15:00", snippet: "Confirmed loading dock access overnight, parking after 9pm. No freight elevator restrictions. Day-of contact tree via Lena.", tags: ["call", "logistics"] },
+  { from: "Marcus Webb <m.webb@wfm.example>", subj: "COI rev. 1 — feedback", t: "Apr 18 11:02", snippet: "Need WFM listed as additional insured per location, not blanket. Attaching their template.", tags: ["legal"] },
+  { from: "Sam Okafor → category team", subj: "Planogram draft v3", t: "Apr 16 09:40", snippet: "v3 attached. 142 fixtures total, removed the 6-fixture run on north wall per Lena's note.", tags: ["planning"] },
+  { from: "Jordan Reyes → ops", subj: "Site survey scheduled", t: "Apr 15 17:22", snippet: "On for Thu Apr 18 morning. Will cover dock, panel, sightlines, refrigeration adjacency.", tags: ["deployment"] }];
+
+  return (
+    <div className="comms">
+      <div className="files-head"><h3>Comms <span className="muted-tx mono">{items.length}</span></h3>
+        <span className="muted-tx mono">ingested · email + call summaries</span>
+      </div>
+      <ul className="comms-list">
+        {items.map((c, i) =>
+        <li key={i} className="comm-row">
+            <span className="mono comm-t">{c.t}</span>
+            <div className="comm-body">
+              <div className="comm-line1">
+                <span className="comm-from">{c.from}</span>
+                <div className="grow" />
+                {c.tags.map((t) => <span key={t} className="tag mono">{t}</span>)}
+              </div>
+              <div className="comm-subj">{c.subj}</div>
+              <div className="comm-snip muted-tx">{c.snippet}</div>
+            </div>
+          </li>
+        )}
+      </ul>
+    </div>);
+
+}
+
+// ============================================================
+// NOTES (composer + list filtered to notes)
+// ============================================================
+function Notes({ notes, composerRef, onPost }) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [sev, setSev] = useState("info");
+  const [team, setTeam] = useState("Implementation");
+  const [action, setAction] = useState(false);
+  const [due, setDue] = useState("");
+  const taRef = useRef();
+
+  const post = () => {
+    const t = title.trim() || body.trim().split("\n")[0].slice(0, 80) || "(untitled note)";
+    onPost({
+      kind: "note",
+      who: "Priya Shah",
+      team,
+      sev,
+      title: t,
+      body: body.trim(),
+      action,
+      due: action ? due || "—" : undefined,
+      mentions: action ? [`@${team.toLowerCase().replace(/ /g, "")}`] : undefined
+    });
+    setTitle("");setBody("");setSev("info");setAction(false);setDue("");
+  };
+
+  const onKeyDown = (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {e.preventDefault();post();}
+  };
+
+  return (
+    <div className="notes">
+      <div className="note-composer" ref={composerRef}>
+        <div className="note-comp-head">
+          <span className="avatar avatar-sm mono">PS</span>
+          <span>New note</span>
+          <span className="muted-tx">· Priya Shah</span>
+          <div className="grow" />
+          <span className="comp-label">severity</span>
+          <div className="sev-seg">
+            {["info", "watch", "blocker"].map((s) =>
+            <button key={s} className={cx("sev-btn", `sev-${s}`, sev === s && "is-on")} onClick={() => setSev(s)}>
+                <Dot tone={s === 'info' ? 'neutral' : s} /> {s}
+              </button>
+            )}
+          </div>
+        </div>
+        <input className="note-title-in" placeholder="Title (optional)…" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={onKeyDown} />
+        <textarea
+          ref={taRef}
+          placeholder="Write a note. Use @mentions to notify. Attach files with ⌘U."
+          rows={3}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          onKeyDown={onKeyDown} />
+        
+        <div className="note-comp-foot">
+          <label className={cx("check-inline action-toggle", action && "is-on")}>
+            <input type="checkbox" checked={action} onChange={(e) => setAction(e.target.checked)} />
+            <span className={cx("check-box-sm", action && "is-on")}>{action && <Icon.check />}</span>
+            Action required
+          </label>
+          {action &&
+          <>
+              <span className="comp-label">assign</span>
+              <select className="select-ish mono" value={team} onChange={(e) => setTeam(e.target.value)}>
+                {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+              </select>
+              <span className="comp-label">due</span>
+              <input className="due-inline mono" placeholder="May 6" value={due} onChange={(e) => setDue(e.target.value)} />
+            </>
+          }
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>⌘</Kbd>+<Kbd>↵</Kbd> post</span>
+          <button className="btn primary" onClick={post} disabled={!body.trim() && !title.trim()}>
+            <Icon.arrowU /> Post note
+          </button>
+        </div>
+      </div>
+      <ol className="timeline">
+        {notes.map((e, i) => <TimelineItem key={i} e={e} />)}
+      </ol>
+    </div>);
+
+}
+
+// ============================================================
+// FLAG MODAL
+// ============================================================
+function FlagModal({ open, onClose, onSubmit }) {
+  const [label, setLabel] = useState("");
+  const [tone, setTone] = useState("watch");
+  const [team, setTeam] = useState("Implementation");
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {if (e.key === "Escape") onClose();};
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!label.trim()) return;
+    onSubmit({ label: label.trim(), tone, team, reason: reason.trim() });
+    setLabel("");setTone("watch");setTeam("Implementation");setReason("");
+  };
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <form className="ai-modal flag-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={submit}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><Icon.flag /> <span>Raise a flag</span><span className="muted-tx">·</span><span className="muted-tx mono">scope: {STORE.id}</span></div>
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+        <div className="flag-body">
+          <label className="field">
+            <span className="field-l">Flag</span>
+            <input autoFocus value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Refrigeration adjacency unclear" />
+          </label>
+          <label className="field">
+            <span className="field-l">Severity</span>
+            <div className="sev-seg">
+              {["info", "watch", "blocker"].map((s) =>
+              <button type="button" key={s} className={cx("sev-btn", `sev-${s}`, tone === s && "is-on")} onClick={() => setTone(s)}>
+                  <Dot tone={s === 'info' ? 'neutral' : s} /> {s}
+                </button>
+              )}
+            </div>
+          </label>
+          <label className="field">
+            <span className="field-l">Assign team</span>
+            <select className="select-ish mono" value={team} onChange={(e) => setTeam(e.target.value)}>
+              {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+            </select>
+          </label>
+          <label className="field field-tall">
+            <span className="field-l">Context</span>
+            <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What's going on, what's needed, by when…" />
+          </label>
+        </div>
+        <div className="flag-foot">
+          <span className="muted-tx mono">Adds to flags + posts to timeline + notifies assigned team</span>
+          <div className="grow" />
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn primary" disabled={!label.trim()}><Icon.flag /> Raise flag</button>
+        </div>
+      </form>
+    </div>);
+
+}
+
+
+// ============================================================
+// SUPABASE HELPER
+// Thin fetch wrapper — no SDK needed. Reads credentials from
+// window.__STOREOPS_CONFIG__ set in index.html.
+// ============================================================
+const SB = (() => {
+  const cfg  = () => window.__STOREOPS_CONFIG__ || {};
+  const url  = () => cfg().supabaseUrl      || "";
+  const key  = () => cfg().supabaseAnonKey  || "";
+  const configured = () => !!(url() && key());
+
+  async function req(path, opts = {}) {
+    if (!configured()) throw new Error("supabase_not_configured");
+    const res = await fetch(`${url()}/rest/v1${path}`, {
+      method: opts.method || "GET",
+      headers: {
+        apikey: key(),
+        Authorization: `Bearer ${key()}`,
+        "Content-Type": "application/json",
+        Prefer: opts.prefer || "return=representation",
+        ...opts.headers,
+      },
+      body: opts.body != null ? JSON.stringify(opts.body) : undefined,
+    });
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || data?.error || "supabase_error");
+    return data;
+  }
+
+  return {
+    configured,
+    async getEntries(storeId) {
+      return req(`/timeline_entries?store_id=eq.${storeId}&order=created_at.desc&limit=200`);
+    },
+    async insertEntry(row) {
+      const rows = await req("/timeline_entries", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async getTasks(storeId) {
+      return req(`/tasks?store_id=eq.${storeId}&order=created_at.desc`);
+    },
+    async insertTask(row) {
+      const rows = await req("/tasks", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async patchTask(id, fields) {
+      return req(`/tasks?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", body: fields });
+    },
+    async getFlags(storeId) {
+      return req(`/flags?store_id=eq.${storeId}&resolved=eq.false&order=created_at.desc`);
+    },
+    async insertFlag(row) {
+      const rows = await req("/flags", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async getFiles(storeId) {
+      return req(`/files?store_id=eq.${storeId}&order=created_at.desc`);
+    },
+    async insertFile(row) {
+      const rows = await req("/files", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async uploadFile(storeId, file, uploadedBy) {
+      const bucket = "storeops-files";
+      const path   = `${storeId}/${Date.now()}_${file.name}`;
+      const upRes  = await fetch(`${url()}/storage/v1/object/${bucket}/${path}`, {
+        method: "POST",
+        headers: { apikey: key(), Authorization: `Bearer ${key()}`, "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      if (!upRes.ok) throw new Error("upload_failed");
+      const size = file.size < 1024 * 1024
+        ? `${Math.round(file.size / 1024)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      return SB.insertFile({ store_id: storeId, name: file.name, size, who: uploadedBy, bucket_path: path });
+    },
+  };
+})();
+
+function dbRowToEntry(r) {
+  return { id: r.id, t: r.t, who: r.who, team: r.team, kind: r.kind,
+    sev: r.sev, title: r.title, body: r.body, action: r.action,
+    due: r.due, mentions: r.mentions, attachment: r.attachment };
+}
+function dbRowToTask(r) {
+  return { id: r.id, title: r.title, state: r.state, owner: r.owner, due: r.due, flag: r.flag };
+}
+function dbRowToFlag(r) {
+  return { id: r.id, label: r.label, tone: r.tone, team: r.team, since: r.since || "—" };
+}
+function dbRowToFile(r) {
+  return { id: r.id, name: r.name, size: r.size, who: r.who,
+    when: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—" };
+}
+
+// ============================================================
+// TASKS — now accepts props from App
+// ============================================================
+function Tasks({ tasks, onCreate, onStateChange }) {
+  const [newTitle, setNewTitle] = useState("");
+  const [newOwner, setNewOwner] = useState("");
+  const [newDue,   setNewDue]   = useState("");
+  const cols = [
+    { id: "Open",    tone: "info" },
+    { id: "Waiting", tone: "watch" },
+    { id: "Done",    tone: "ok" },
+  ];
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    onCreate({ title: newTitle.trim(), owner: newOwner.trim(), due: newDue.trim() || "—" });
+    setNewTitle(""); setNewOwner(""); setNewDue("");
+  };
+
+  return (
+    <div className="tasks">
+      <div className="tasks-head">
+        <h3>Tasks <span className="muted-tx mono">{tasks.length}</span></h3>
+      </div>
+
+      {/* New task form */}
+      <form className="new-task-form" onSubmit={submit}>
+        <input
+          className="new-task-title"
+          placeholder="New task title…"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+        />
+        <input
+          className="new-task-field"
+          placeholder="Owner"
+          value={newOwner}
+          onChange={(e) => setNewOwner(e.target.value)}
+        />
+        <input
+          className="new-task-field mono"
+          placeholder="Due date"
+          value={newDue}
+          onChange={(e) => setNewDue(e.target.value)}
+        />
+        <button className="btn primary" type="submit" disabled={!newTitle.trim()}>
+          <Icon.plus /> Add task
+        </button>
+      </form>
+
+      <div className="task-cols">
+        {cols.map((c) => {
+          const items = tasks.filter((t) => t.state === c.id);
+          return (
+            <div key={c.id} className="task-col">
+              <div className="task-col-head">
+                <Dot tone={c.tone === "ok" ? "green" : c.tone === "watch" ? "yellow" : "neutral"} />
+                <span>{c.id}</span>
+                <span className="mono task-col-n">{items.length}</span>
+              </div>
+              {items.map((t) => (
+                <div key={t.id} className={cx("task-card", t.flag === "blocker" && "is-blocker")}>
+                  <div className="task-card-top">
+                    <span className="mono task-id">{t.id}</span>
+                    {t.flag && <Pill tone="blocker">blocker</Pill>}
+                  </div>
+                  <div className="task-card-title">{t.title}</div>
+                  <div className="task-card-foot">
+                    <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map((s)=>s[0]).join("")}</span>
+                    <span className="muted-tx">{t.owner}</span>
+                    <div className="grow" />
+                    <span className="mono">{t.due}</span>
+                  </div>
+                  {/* State controls */}
+                  <div className="task-card-actions">
+                    {c.id !== "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Open")}>Open</button>}
+                    {c.id !== "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Waiting")}>Waiting</button>}
+                    {c.id !== "Done"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id, "Done")}>Done</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// FILES — now accepts props from App
+// ============================================================
+function Files({ files, onUpload }) {
+  const fileInputRef = useRef();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) onUpload(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="files">
+      <div className="files-head">
+        <h3>Files <span className="muted-tx mono">{files.length}</span></h3>
+        <button className="btn ghost sm" onClick={() => fileInputRef.current?.click()}>
+          <Icon.plus /> Upload
+        </button>
+        <input ref={fileInputRef} type="file" style={{display:"none"}} onChange={handleFileChange} />
+      </div>
+      <table className="ftbl">
+        <thead><tr>
+          <th style={{ width: "6%" }}>#</th>
+          <th>Name</th><th>Size</th><th>Uploaded by</th><th>When</th><th></th>
+        </tr></thead>
+        <tbody>
+          {files.map((f, i) => (
+            <tr key={f.id || f.name}>
+              <td className="mono muted-tx">{String(i + 1).padStart(2, "0")}</td>
+              <td><span className="ftbl-name"><Icon.paper /> {f.name}</span></td>
+              <td className="mono">{f.size}</td>
+              <td>{f.who}</td>
+              <td className="mono">{f.when}</td>
+              <td className="ftbl-actions"><button className="iconbtn xs"><Icon.dot3 /></button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ============================================================
+// APP
+// ============================================================
+function App() {
+  const [tweaks, setTweak] = useTweaks(window.__TWEAK_DEFAULTS__ || {});
+  const [tab, setTab]           = useState("overview");
+  const [aiOpen, setAiOpen]     = useState(false);
+  const [flagOpen, setFlagOpen] = useState(false);
+  const [phaseOpen, setPhaseOpen] = useState(null);
+  const [subState, setSubState]   = useState({});
+  const [phaseTasks, setPhaseTasks] = useState({});
+
+  const [entries,   setEntries]   = useState(TIMELINE);
+  const [liveTasks, setLiveTasks] = useState(TASKS);
+  const [liveFlags, setLiveFlags] = useState(FLAGS);
+  const [liveFiles, setLiveFiles] = useState(FILES);
+  const [loading,   setLoading]   = useState(false);
+  const [dbError,   setDbError]   = useState(null);
+  const [toast,     setToast]     = useState(null);
+  const composerRef = useRef();
+
+  // ── Load from Supabase on mount ──────────────────────────
+  useEffect(() => {
+    if (!SB.configured()) return;
+    setLoading(true);
+    Promise.all([
+      SB.getEntries(STORE.id),
+      SB.getTasks(STORE.id),
+      SB.getFlags(STORE.id),
+      SB.getFiles(STORE.id),
+    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles]) => {
+      if (dbEntries?.length) setEntries(dbEntries.map(dbRowToEntry));
+      if (dbTasks?.length)   setLiveTasks(dbTasks.map(dbRowToTask));
+      if (dbFlags?.length)   setLiveFlags(dbFlags.map(dbRowToFlag));
+      if (dbFiles?.length)   setLiveFiles(dbFiles.map(dbRowToFile));
+    }).catch((e) => setDbError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const flashToast = (msg, isError = false) => {
+    setToast({ msg, isError });
+    setTimeout(() => setToast(null), 3200);
+  };
+
+  const nowStamp = () => {
+    const now = new Date();
+    return `${now.toLocaleString("en-US",{month:"short",day:"numeric"})} · ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+  };
+
+  const goToNotes = () => {
+    setTab("notes");
+    setTimeout(() => {
+      const ta = composerRef.current?.querySelector("textarea");
+      ta?.focus();
+      composerRef.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    }, 30);
+  };
+
+  // ── Post note ────────────────────────────────────────────
+  const postNote = async (n) => {
+    const t = nowStamp();
+    setEntries((es) => [{ ...n, t }, ...es]);
+    flashToast(n.action
+      ? `Note posted · assigned to ${n.team}${n.due && n.due !== "—" ? ` · due ${n.due}` : ""}`
+      : "Note posted");
+    if (!SB.configured()) return;
+    try {
+      await SB.insertEntry({
+        store_id: STORE.id, t, who: n.who || "Priya Shah",
+        team: n.team, kind: n.kind || "note", sev: n.sev,
+        title: n.title, body: n.body, action: n.action || false,
+        due: n.due, mentions: n.mentions, attachment: n.attachment,
+      });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Create task ──────────────────────────────────────────
+  const createTask = async (taskData) => {
+    const id = `T-${Date.now()}`;
+    const newTask = { id, state: "Open", flag: null, ...taskData };
+    setLiveTasks((ts) => [newTask, ...ts]);
+    flashToast(`Task created`);
+    if (!SB.configured()) return;
+    try {
+      const row = await SB.insertTask({
+        id, store_id: STORE.id, title: taskData.title,
+        state: "Open", owner: taskData.owner || "", due: taskData.due || "—", flag: null,
+      });
+      if (row?.id && row.id !== id)
+        setLiveTasks((ts) => ts.map((t) => t.id === id ? dbRowToTask(row) : t));
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Update task state ────────────────────────────────────
+  const updateTaskState = async (taskId, newState) => {
+    setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state: newState } : t));
+    flashToast(`Task → ${newState}`);
+    if (!SB.configured()) return;
+    try {
+      await SB.patchTask(taskId, { state: newState, updated_at: new Date().toISOString() });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Raise flag ───────────────────────────────────────────
+  const submitFlag = async ({ label, tone, team, reason }) => {
+    const t = nowStamp();
+    setLiveFlags((fs) => [{ label, tone, team, since: "just now" }, ...fs]);
+    setEntries((es) => [{
+      kind: "note", who: "Priya Shah", team, sev: tone,
+      title: `Flag raised: ${label}`, body: reason || "—",
+      action: true, due: "—", mentions: [`@${team.toLowerCase().replace(/ /g,"")}`], t,
+    }, ...es]);
+    setFlagOpen(false);
+    flashToast(`Flag raised · assigned to ${team}`);
+    if (!SB.configured()) return;
+    try {
+      await Promise.all([
+        SB.insertFlag({ store_id: STORE.id, label, tone, team, since: "just now" }),
+        SB.insertEntry({ store_id: STORE.id, t, who: "Priya Shah", team, kind: "note", sev: tone,
+          title: `Flag raised: ${label}`, body: reason || "—",
+          action: true, due: "—", mentions: [`@${team.toLowerCase().replace(/ /g,"")}`] }),
+      ]);
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Upload file ──────────────────────────────────────────
+  const uploadFile = async (file) => {
+    const optimistic = { name: file.name, size: "…", who: "me", when: "just now" };
+    setLiveFiles((fs) => [optimistic, ...fs]);
+    if (!SB.configured()) { flashToast("Configure Supabase to persist files"); return; }
+    try {
+      const row = await SB.uploadFile(STORE.id, file, "Priya Shah");
+      setLiveFiles((fs) => fs.map((f) => f === optimistic ? dbRowToFile(row) : f));
+      flashToast(`${file.name} uploaded`);
+    } catch (e) {
+      setLiveFiles((fs) => fs.filter((f) => f !== optimistic));
+      flashToast("Upload failed: " + e.message, true);
+    }
+  };
+
+  // ── Phase helpers ─────────────────────────────────────────
+  const toggleSub = (phase, i) => {
+    const k = `${phase}:${i}`;
+    const prevDone = subState[k] ?? PHASE_DETAIL[phase].subtasks[i].done;
+    setSubState((s) => ({ ...s, [k]: !prevDone }));
+    flashToast(`${PHASE_DETAIL[phase].subtasks[i].label} → ${!prevDone ? "done" : "open"}`);
+  };
+  const postPhaseNote = (phase, text) => postNote({
+    kind: "note", who: "Priya Shah", team: PHASE_DETAIL[phase].owner, sev: "info",
+    title: `[${phase}] ${text.split("\n")[0].slice(0, 80)}`, body: text, action: false,
+  });
+  const createPhaseTask = async (phase, { title, team, due }) => {
+    const id = `T-${Date.now()}`;
+    setPhaseTasks((pt) => ({ ...pt, [phase]: [...(pt[phase] || []), { id, title, team, due, state: "Open" }] }));
+    const t = nowStamp();
+    const entry = { kind: "task", who: "Priya Shah", team, sev: "info",
+      title: `[${phase}] Task created: ${title}`,
+      body: `Assigned to ${team} · due ${due}`, action: true, due, t };
+    setEntries((es) => [entry, ...es]);
+    flashToast(`Task created · assigned to ${team}`);
+    if (!SB.configured()) return;
+    try {
+      await Promise.all([
+        SB.insertTask({ id, store_id: STORE.id, title, state: "Open", owner: team, due: due || "—" }),
+        SB.insertEntry({ store_id: STORE.id, ...entry }),
+      ]);
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Hotkeys ───────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.matches?.("input, textarea, select")) return;
+      const map = { "1":"overview","2":"timeline","3":"notes","4":"tasks","5":"comms","6":"files","7":"audit" };
+      if (map[e.key]) setTab(map[e.key]);
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); goToNotes(); }
+      if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setFlagOpen(true); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") { e.preventDefault(); setAiOpen((o) => !o); }
+      if (e.key === "Escape") { setAiOpen(false); setFlagOpen(false); setPhaseOpen(null); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ── Tweaks → CSS ──────────────────────────────────────────
+  useEffect(() => {
+    const r = document.documentElement;
+    r.dataset.theme   = tweaks.dark    ? "dark" : "light";
+    r.dataset.density = tweaks.density;
+    r.dataset.showKbd = tweaks.showKbd ? "true" : "false";
+    r.style.setProperty("--accent-h", tweaks.accentHue);
+  }, [tweaks]);
+
+  return (
+    <div className="app">
+      <LeftNav />
+      <main className="main">
+        <StoreHeader tweaks={tweaks} onNewNote={goToNotes} onFlag={() => setFlagOpen(true)} onPhaseSelect={setPhaseOpen} />
+        <TabBar active={tab} onSelect={setTab} />
+
+        {!SB.configured() && (
+          <div className="config-banner">
+            ⚠ Supabase not configured — changes won't persist after refresh.
+            Fill in <code>window.__STOREOPS_CONFIG__</code> in index.html.
+          </div>
+        )}
+        {dbError && (
+          <div className="config-banner config-banner-error">
+            ⚠ Supabase error: {dbError}
+          </div>
+        )}
+
+        <div className="content">
+          <div className="content-main">
+            {loading && <div className="loading-bar" />}
+            {tab === "overview" && <Overview flags={liveFlags} tasks={liveTasks} />}
+            {tab === "timeline" && <Timeline entries={entries} />}
+            {tab === "notes"    && <Notes notes={entries.filter((e) => e.kind === "note")} composerRef={composerRef} onPost={postNote} />}
+            {tab === "tasks"    && <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState} />}
+            {tab === "comms"    && <Comms />}
+            {tab === "files"    && <Files files={liveFiles} onUpload={uploadFile} />}
+            {tab === "audit"    && <Audit />}
+          </div>
+          {tweaks.showRail && <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} />}
+        </div>
+      </main>
+
+      <button className={cx("ai-fab", aiOpen && "is-open")} onClick={() => setAiOpen((o) => !o)} title="Ask AI (⌘J)">
+        <Icon.spark /><span>Ask AI</span><Kbd>⌘J</Kbd>
+      </button>
+
+      <AIModal open={aiOpen} onClose={() => setAiOpen(false)} />
+      <FlagModal open={flagOpen} onClose={() => setFlagOpen(false)} onSubmit={submitFlag} />
+      <PhaseDrawer
+        phase={phaseOpen}
+        onClose={() => setPhaseOpen(null)}
+        subState={subState}
+        onToggleSub={toggleSub}
+        onPostNote={postPhaseNote}
+        onCreateTask={createPhaseTask}
+        phaseTasks={phaseOpen ? (phaseTasks[phaseOpen] || []) : []}
+        phaseNotes={phaseOpen ? entries.filter((e) => e.kind === "note" && e.title?.startsWith(`[${phaseOpen}]`)) : []}
+      />
+
+      {toast && (
+        <div className={cx("toast", toast.isError && "toast-error")}>
+          {toast.isError ? <Icon.flag /> : <Icon.check />}
+          <span>{toast.msg}</span>
+        </div>
+      )}
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Appearance">
+          <TweakToggle label="Dark mode"  value={tweaks.dark}      onChange={(v) => setTweak("dark", v)} />
+          <TweakRadio  label="Density"    value={tweaks.density}   options={[{value:"compact",label:"Compact"},{value:"comfy",label:"Comfy"}]} onChange={(v) => setTweak("density", v)} />
+          <TweakSlider label="Accent hue" value={tweaks.accentHue} min={0} max={360} step={5} onChange={(v) => setTweak("accentHue", v)} />
+        </TweakSection>
+        <TweakSection title="Layout">
+          <TweakToggle label="Show right rail"     value={tweaks.showRail}  onChange={(v) => setTweak("showRail", v)} />
+          <TweakToggle label="Show keyboard hints" value={tweaks.showKbd}   onChange={(v) => setTweak("showKbd", v)} />
+          <TweakToggle label="Show phase strip"    value={tweaks.showPhase} onChange={(v) => setTweak("showPhase", v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
 </body>
 </html>

@@ -999,20 +999,41 @@ button:focus-visible { outline-offset: 1px; }
 /* TOAST ERROR */
 .toast-error { background: var(--bad); }
 .toast-error svg { color: white; }
+
+/* STORE EDIT MODAL */
+.store-edit-modal { width: min(600px, 94vw); max-height: 88vh; }
+.store-edit-modal .flag-body { max-height: calc(88vh - 110px); overflow-y: auto; }
+.field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field-row-2 .field { grid-template-columns: 80px 1fr; }
+
+/* TEAM MODAL */
+.team-modal { width: min(600px, 94vw); }
+.team-modal-body { padding: var(--pad-3) var(--pad-4); display: flex; flex-direction: column; gap: 8px; max-height: calc(80vh - 120px); overflow-y: auto; }
+.team-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.team-edit-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px var(--pad-2); border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-elev);
+}
+.team-edit-row.is-editing { border-color: var(--accent); background: var(--accent-soft); }
+.team-inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
+.team-new-form { padding: 10px; border: 1px dashed var(--border-2); border-radius: var(--radius); background: var(--panel); }
+.team-field {
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 26px; padding: 0 8px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none; min-width: 120px; flex: 1;
+}
+.team-field:focus { border-color: var(--accent); }
+.team-form-actions { display: flex; gap: 4px; margin-left: auto; }
 </style>
 <script>
   window.__STOREOPS_CONFIG__ = {
     supabaseUrl:     "https://tycmdibzkqpqelrslicg.supabase.co",
-    supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5Y21kaWJ6a3FwcWVscnNsaWNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTkwMDgsImV4cCI6MjA5MzQ5NTAwOH0.Zla3_xoX5MtRf38HHOMyxb2ohKCjv--vMtg35ZLW3ys",
+    supabaseAnonKey: "YOUR_ANON_KEY_HERE",
     anthropicKey:    "",
   };
   window.__TWEAK_DEFAULTS__ = /*EDITMODE-BEGIN*/{
-    "dark":       false,
-    "density":    "compact",
-    "accentHue":  275,
-    "showRail":   true,
-    "showKbd":    true,
-    "showPhase":  true
+    "dark":false,"density":"compact","accentHue":275,"showRail":true,"showKbd":true,"showPhase":true
   }/*EDITMODE-END*/;
 </script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -1662,16 +1683,7 @@ const Icon = {
 // ============================================================
 // LEFT NAV
 // ============================================================
-function LeftNav() {
-  const items = [
-  { label: "Dashboard", k: "D" },
-  { label: "Retailers", k: "R", count: 7 },
-  { label: "Stores", k: "S", count: 248, active: true },
-  { label: "Flags", k: "F", count: 31 },
-  { label: "Tasks", k: "T", count: 84 },
-  { label: "AI chat", k: "A" },
-  { label: "Reports", k: "P" }];
-
+function LeftNav({ stores = [], onAddStore }) {
   return (
     <nav className="leftnav">
       <div className="leftnav-head">
@@ -1681,32 +1693,21 @@ function LeftNav() {
         </div>
         <button className="iconbtn" title="Command menu (⌘K)"><Icon.search /></button>
       </div>
-      <div className="nav-section-label">Workspaces</div>
-      <ul className="nav-list">
-        {items.map((i) =>
-        <li key={i.label} className={cx("nav-item", i.active && "is-active")}>
-            <span className="nav-label">{i.label}</span>
-            {i.count != null && <span className="nav-count mono">{i.count}</span>}
-            <Kbd>{i.k}</Kbd>
-          </li>
-        )}
-      </ul>
-      <div className="nav-section-label">Pinned stores</div>
-      <ul className="nav-list nav-pinned">
-        {[
-        { id: "WFM-1247", label: "Cambridge — Charles Sq", h: "yellow", active: true },
-        { id: "TGT-0883", label: "Austin — Mueller", h: "red" },
-        { id: "WFM-1102", label: "Brooklyn — Bedford", h: "green" },
-        { id: "KRG-2210", label: "Cincinnati — Hyde Park", h: "green" },
-        { id: "TGT-1455", label: "Seattle — Northgate", h: "yellow" }].
-        map((s) =>
-        <li key={s.id} className={cx("nav-item nav-store", s.active && "is-active")}>
-            <Dot tone={s.h} />
+      <div className="nav-section-label">Stores <span className="nav-count mono">{stores.length}</span></div>
+      <ul className="nav-list nav-pinned" style={{flex:1, overflowY:"auto"}}>
+        {stores.map((s) => (
+          <li key={s.id} className={cx("nav-item nav-store", s.id === STORE.id && "is-active")}>
+            <Dot tone={s.health || "neutral"} />
             <span className="mono nav-store-id">{s.id}</span>
-            <span className="nav-store-name">{s.label}</span>
+            <span className="nav-store-name">{s.name || s.retailer}</span>
           </li>
-        )}
+        ))}
       </ul>
+      <div style={{padding:"8px 10px", borderTop:"1px solid var(--border)"}}>
+        <button className="btn ghost" style={{width:"100%", justifyContent:"center"}} onClick={onAddStore}>
+          <Icon.plus /> Add store
+        </button>
+      </div>
       <div className="leftnav-foot">
         <div className="me">
           <span className="avatar mono">PS</span>
@@ -1717,49 +1718,47 @@ function LeftNav() {
         </div>
       </div>
     </nav>);
-
 }
 
 // ============================================================
 // HEADER (breadcrumb, store id, track strip, snapshot row)
 // ============================================================
-function StoreHeader({ tweaks, onNewNote, onFlag, onPhaseSelect }) {
+function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit }) {
   return (
     <header className="store-header">
       <div className="crumbs">
         <span>Stores</span>
         <Icon.chevR />
-        <span>{STORE.retailer}</span>
+        <span>{store.retailer}</span>
         <Icon.chevR />
-        <span className="crumb-current mono">{STORE.id}</span>
-        <span className="crumb-tail">· {STORE.name}</span>
+        <span className="crumb-current mono">{store.id}</span>
+        <span className="crumb-tail">· {store.name}</span>
         <div className="header-actions">
+          <button className="btn ghost" onClick={onEdit}><Icon.paper /> Edit store</button>
           <button className="btn ghost" onClick={onFlag}><Icon.flag /> Flag <Kbd>F</Kbd></button>
           <button className="btn ghost"><Icon.link /> Copy link</button>
-          <button className="btn ghost"><Icon.dot3 /></button>
           <button className="btn primary" onClick={onNewNote}><Icon.plus /> New note <Kbd>N</Kbd></button>
         </div>
       </div>
 
       <div className="store-title-row">
         <div className="store-title-left">
-          <Dot tone={STORE.health} size={10} />
-          <h1 className="store-title">{STORE.retailer} #{STORE.storeNum}</h1>
-          <span className="store-sub mono">{STORE.id}</span>
+          <Dot tone={store.health} size={10} />
+          <h1 className="store-title">{store.retailer} #{store.storeNum}</h1>
+          <span className="store-sub mono">{store.id}</span>
           <span className="addr-sep">·</span>
-          <span className="store-addr">{STORE.address}</span>
+          <span className="store-addr">{store.address}</span>
         </div>
         <div className="store-title-right">
-          <span className="meta-stat"><span className="meta-k">INSTALL DATE</span> <span className="mono">{STORE.openedOn}</span></span>
-          <span className="meta-stat"><span className="meta-k">SITE SURVEY</span> <span className="mono">{STORE.scheduledLive}</span></span>
-          <span className="meta-stat"><span className="meta-k">Sqft</span> <span className="mono">{STORE.sqft}</span></span>
-          <span className="meta-stat"><span className="meta-k">Region</span> <span className="mono">{STORE.region}</span></span>
+          <span className="meta-stat"><span className="meta-k">INSTALL DATE</span> <span className="mono">{store.openedOn}</span></span>
+          <span className="meta-stat"><span className="meta-k">GO-LIVE</span> <span className="mono">{store.scheduledLive}</span></span>
+          <span className="meta-stat"><span className="meta-k">Sqft</span> <span className="mono">{store.sqft}</span></span>
+          <span className="meta-stat"><span className="meta-k">Region</span> <span className="mono">{store.region}</span></span>
         </div>
       </div>
 
       {tweaks.showPhase && <PhaseStrip onSelect={onPhaseSelect} />}
     </header>);
-
 }
 
 function PhaseStrip({ onSelect }) {
@@ -2161,7 +2160,7 @@ function Audit() {
 // ============================================================
 // RIGHT RAIL
 // ============================================================
-function RightRail({ onAskAI, flags, onFlag }) {
+function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam }) {
   return (
     <aside className="rail">
       <section className="rail-section">
@@ -2222,18 +2221,21 @@ function RightRail({ onAskAI, flags, onFlag }) {
       </section>
 
       <section className="rail-section">
-        <div className="rail-head"><h4>Team <span className="muted-tx mono">{TEAM.length}</span></h4></div>
+        <div className="rail-head">
+          <h4>Team <span className="muted-tx mono">{team.length}</span></h4>
+          <button className="linkbtn" onClick={onEditTeam}><Icon.plus /> Edit</button>
+        </div>
         <ul className="contacts">
-          {TEAM.map((m) =>
-          <li key={m.name} className="contact-row">
+          {team.map((m, i) =>
+          <li key={i} className="contact-row">
               <span className={cx("avatar avatar-sm mono", "avatar-internal")}>
                 {m.initials}
               </span>
               <div className="contact-text">
                 <div className="contact-name">{m.name} {m.load === "primary" && <span className="muted-tx mono">· lead</span>}</div>
-                <div className="contact-sub">{m.role} · <span className="mono muted-tx">since {m.since}</span></div>
+                <div className="contact-sub">{m.role} · <span className="mono muted-tx">{m.team}</span></div>
               </div>
-              <Pill tone={m.load === "primary" ? "watch" : m.load === "active" ? "info" : "info"}>{m.load}</Pill>
+              <Pill tone={m.load === "primary" ? "watch" : "info"}>{m.load}</Pill>
             </li>
           )}
         </ul>
@@ -2687,6 +2689,28 @@ const SB = (() => {
         : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
       return SB.insertFile({ store_id: storeId, name: file.name, size, who: uploadedBy, bucket_path: path });
     },
+    // Stores
+    async listStores() {
+      return req("/stores?order=created_at.desc&limit=200");
+    },
+    async insertStore(row) {
+      const rows = await req("/stores", { method: "POST", body: row });
+      return Array.isArray(rows) ? rows[0] : rows;
+    },
+    async patchStore(id, fields) {
+      return req(`/stores?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", body: fields });
+    },
+    // Team members
+    async getTeam(storeId) {
+      return req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.asc`);
+    },
+    async replaceTeam(storeId, members) {
+      // Delete all then re-insert
+      await req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}`, { method: "DELETE", prefer: "return=minimal" });
+      if (!members.length) return [];
+      const rows = await req("/team_members", { method: "POST", body: members.map((m) => ({ ...m, store_id: storeId })) });
+      return rows;
+    },
   };
 })();
 
@@ -2700,6 +2724,16 @@ function dbRowToTask(r) {
 }
 function dbRowToFlag(r) {
   return { id: r.id, label: r.label, tone: r.tone, team: r.team, since: r.since || "—" };
+}
+function rowToStore(r) {
+  return {
+    id: r.id, retailer: r.retailer, retailerCode: r.retailer_code,
+    storeNum: r.store_num, name: r.name, address: r.address,
+    phase: r.phase, health: r.health, owner: r.owner, ownerPerson: r.owner_person,
+    nextAction: r.next_action, due: r.due, dueDelta: r.due_delta,
+    risk: r.risk, openedOn: r.opened_on, scheduledLive: r.scheduled_live,
+    sqft: r.sqft, region: r.region, fixtureCount: r.fixture_count, skus: r.skus,
+  };
 }
 function dbRowToFile(r) {
   return { id: r.id, name: r.name, size: r.size, who: r.who,
@@ -2855,9 +2889,15 @@ function App() {
   const [liveTasks, setLiveTasks] = useState(TASKS);
   const [liveFlags, setLiveFlags] = useState(FLAGS);
   const [liveFiles, setLiveFiles] = useState(FILES);
+  const [liveTeam,  setLiveTeam]  = useState(TEAM);
+  const [storeData, setStoreData] = useState(STORE);
+  const [allStores, setAllStores] = useState([STORE]);
   const [loading,   setLoading]   = useState(false);
   const [dbError,   setDbError]   = useState(null);
   const [toast,     setToast]     = useState(null);
+  const [editStoreOpen, setEditStoreOpen] = useState(false);
+  const [addStoreOpen,  setAddStoreOpen]  = useState(false);
+  const [teamOpen,      setTeamOpen]      = useState(false);
   const composerRef = useRef();
 
   // ── Load from Supabase on mount ──────────────────────────
@@ -2869,11 +2909,18 @@ function App() {
       SB.getTasks(STORE.id),
       SB.getFlags(STORE.id),
       SB.getFiles(STORE.id),
-    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles]) => {
+      SB.getTeam(STORE.id),
+      SB.listStores(),
+    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles, dbTeam, dbStores]) => {
       if (dbEntries?.length) setEntries(dbEntries.map(dbRowToEntry));
       if (dbTasks?.length)   setLiveTasks(dbTasks.map(dbRowToTask));
       if (dbFlags?.length)   setLiveFlags(dbFlags.map(dbRowToFlag));
       if (dbFiles?.length)   setLiveFiles(dbFiles.map(dbRowToFile));
+      if (dbTeam?.length)    setLiveTeam(dbTeam.map((r) => ({
+        name: r.name, role: r.role, team: r.team,
+        load: r.load, initials: r.initials, since: r.since,
+      })));
+      if (dbStores?.length)  setAllStores(dbStores.map(rowToStore));
     }).catch((e) => setDbError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -3008,6 +3055,59 @@ function App() {
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
+  // ── Save store edits ─────────────────────────────────────
+  const saveStore = async (updated) => {
+    setStoreData(updated);
+    setAllStores((ss) => ss.map((s) => s.id === updated.id ? updated : s));
+    setEditStoreOpen(false);
+    flashToast("Store details saved");
+    if (!SB.configured()) return;
+    try {
+      await SB.patchStore(updated.id, {
+        retailer: updated.retailer, store_num: updated.storeNum,
+        name: updated.name, address: updated.address, region: updated.region,
+        phase: updated.phase, health: updated.health,
+        owner: updated.owner, owner_person: updated.ownerPerson,
+        next_action: updated.nextAction, due: updated.due,
+        sqft: updated.sqft, scheduled_live: updated.scheduledLive,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Add new store ─────────────────────────────────────────
+  const addStore = async (newStore) => {
+    setAllStores((ss) => [newStore, ...ss]);
+    setAddStoreOpen(false);
+    flashToast(`Store ${newStore.id} added`);
+    if (!SB.configured()) return;
+    try {
+      await SB.insertStore({
+        id: newStore.id, retailer: newStore.retailer,
+        retailer_code: newStore.retailerCode || newStore.id.split("-")[0],
+        store_num: newStore.storeNum, name: newStore.name,
+        address: newStore.address, region: newStore.region,
+        phase: newStore.phase, health: newStore.health,
+        owner: newStore.owner, owner_person: newStore.ownerPerson,
+        next_action: newStore.nextAction, due: newStore.due,
+        sqft: newStore.sqft, scheduled_live: newStore.scheduledLive,
+        opened_on: newStore.openedOn, due_delta: newStore.dueDelta,
+        risk: newStore.risk, fixture_count: newStore.fixtureCount, skus: newStore.skus,
+      });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Save team ─────────────────────────────────────────────
+  const saveTeam = async (members) => {
+    setLiveTeam(members);
+    setTeamOpen(false);
+    flashToast("Team saved");
+    if (!SB.configured()) return;
+    try {
+      await SB.replaceTeam(STORE.id, members);
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
   // ── Hotkeys ───────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e) => {
@@ -3034,9 +3134,9 @@ function App() {
 
   return (
     <div className="app">
-      <LeftNav />
+      <LeftNav stores={allStores} onAddStore={() => setAddStoreOpen(true)} />
       <main className="main">
-        <StoreHeader tweaks={tweaks} onNewNote={goToNotes} onFlag={() => setFlagOpen(true)} onPhaseSelect={setPhaseOpen} />
+        <StoreHeader store={storeData} tweaks={tweaks} onNewNote={goToNotes} onFlag={() => setFlagOpen(true)} onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)} />
         <TabBar active={tab} onSelect={setTab} />
 
         {!SB.configured() && (
@@ -3062,7 +3162,7 @@ function App() {
             {tab === "files"    && <Files files={liveFiles} onUpload={uploadFile} />}
             {tab === "audit"    && <Audit />}
           </div>
-          {tweaks.showRail && <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} />}
+          {tweaks.showRail && <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} />}
         </div>
       </main>
 
@@ -3072,6 +3172,9 @@ function App() {
 
       <AIModal open={aiOpen} onClose={() => setAiOpen(false)} />
       <FlagModal open={flagOpen} onClose={() => setFlagOpen(false)} onSubmit={submitFlag} />
+      <StoreEditModal store={storeData} open={editStoreOpen} onClose={() => setEditStoreOpen(false)} onSave={saveStore} />
+      <AddStoreModal open={addStoreOpen} onClose={() => setAddStoreOpen(false)} onAdd={addStore} />
+      <TeamModal open={teamOpen} onClose={() => setTeamOpen(false)} team={liveTeam} onSave={saveTeam} />
       <PhaseDrawer
         phase={phaseOpen}
         onClose={() => setPhaseOpen(null)}
@@ -3107,6 +3210,339 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+// ============================================================
+// STORE EDIT MODAL
+// Edit store details: name, address, phase, health, owner, etc.
+// ============================================================
+function StoreEditModal({ store, open, onClose, onSave }) {
+  const [form, setForm] = useState(store);
+  useEffect(() => { if (open) setForm(store); }, [open, store]);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    onSave(form);
+  };
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <form className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={submit}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title">
+            <Icon.paper /><span>Edit store</span>
+            <span className="muted-tx mono">· {store.id}</span>
+          </div>
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+
+        <div className="flag-body">
+          <label className="field">
+            <span className="field-l">Store ID</span>
+            <input value={form.id} onChange={(e) => set("id", e.target.value)} placeholder="e.g. WFM-1247" />
+          </label>
+          <label className="field">
+            <span className="field-l">Retailer</span>
+            <input value={form.retailer} onChange={(e) => set("retailer", e.target.value)} placeholder="e.g. Whole Foods Market" />
+          </label>
+          <label className="field">
+            <span className="field-l">Store #</span>
+            <input value={form.storeNum} onChange={(e) => set("storeNum", e.target.value)} placeholder="e.g. 1247" />
+          </label>
+          <label className="field">
+            <span className="field-l">Name</span>
+            <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Cambridge — Charles Sq" />
+          </label>
+          <label className="field">
+            <span className="field-l">Address</span>
+            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street, City State ZIP" />
+          </label>
+          <label className="field">
+            <span className="field-l">Region</span>
+            <input value={form.region} onChange={(e) => set("region", e.target.value)} placeholder="e.g. Northeast / NE-04" />
+          </label>
+          <div className="field">
+            <span className="field-l">Phase</span>
+            <select className="select-ish mono" value={form.phase} onChange={(e) => set("phase", e.target.value)}>
+              {["Planning","Scheduled","COI","Deployment","Live"].map((p) => <option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-l">Health</span>
+            <div className="sev-seg">
+              {[["green","green"],["yellow","yellow"],["red","red"]].map(([v, label]) => (
+                <button type="button" key={v}
+                  className={cx("sev-btn", form.health === v && "is-on")}
+                  onClick={() => set("health", v)}>
+                  <Dot tone={v} /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="field">
+            <span className="field-l">Owner team</span>
+            <select className="select-ish mono" value={form.owner} onChange={(e) => set("owner", e.target.value)}>
+              {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+            </select>
+          </label>
+          <label className="field">
+            <span className="field-l">Owner person</span>
+            <input value={form.ownerPerson} onChange={(e) => set("ownerPerson", e.target.value)} placeholder="e.g. Priya Shah" />
+          </label>
+          <label className="field">
+            <span className="field-l">Next action</span>
+            <input value={form.nextAction} onChange={(e) => set("nextAction", e.target.value)} placeholder="e.g. Get signed COI" />
+          </label>
+          <label className="field">
+            <span className="field-l">Due</span>
+            <input className="mono" value={form.due} onChange={(e) => set("due", e.target.value)} placeholder="May 6" />
+          </label>
+          <div className="field-row-2">
+            <label className="field">
+              <span className="field-l">Sqft</span>
+              <input className="mono" value={form.sqft} onChange={(e) => set("sqft", e.target.value)} placeholder="48,200" />
+            </label>
+            <label className="field">
+              <span className="field-l">Go-live</span>
+              <input className="mono" value={form.scheduledLive} onChange={(e) => set("scheduledLive", e.target.value)} placeholder="May 18, 2026" />
+            </label>
+          </div>
+        </div>
+
+        <div className="flag-foot">
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn primary"><Icon.check /> Save changes</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
+// ADD STORE MODAL
+// ============================================================
+function AddStoreModal({ open, onClose, onAdd }) {
+  const blank = { id: "", retailer: "", storeNum: "", name: "", address: "",
+    region: "", phase: "Planning", health: "green", owner: "Implementation",
+    ownerPerson: "", nextAction: "", due: "", sqft: "", scheduledLive: "",
+    openedOn: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),
+    dueDelta: "", risk: "low", fixtureCount: 0, skus: 0, retailerCode: "" };
+  const [form, setForm] = useState(blank);
+
+  useEffect(() => { if (open) setForm(blank); }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+
+  if (!open) return null;
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.id.trim() || !form.retailer.trim()) return;
+    onAdd({ ...form, id: form.id.trim().toUpperCase() });
+  };
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <form className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={submit}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><Icon.plus /><span>Add new store</span></div>
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button type="button" className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+        <div className="flag-body">
+          <label className="field">
+            <span className="field-l">Store ID *</span>
+            <input autoFocus value={form.id} onChange={(e) => set("id", e.target.value)} placeholder="e.g. WFM-1248" />
+          </label>
+          <label className="field">
+            <span className="field-l">Retailer *</span>
+            <input value={form.retailer} onChange={(e) => set("retailer", e.target.value)} placeholder="e.g. Whole Foods Market" />
+          </label>
+          <label className="field">
+            <span className="field-l">Store #</span>
+            <input value={form.storeNum} onChange={(e) => set("storeNum", e.target.value)} placeholder="e.g. 1248" />
+          </label>
+          <label className="field">
+            <span className="field-l">Name</span>
+            <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Boston — Back Bay" />
+          </label>
+          <label className="field">
+            <span className="field-l">Address</span>
+            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street, City State ZIP" />
+          </label>
+          <label className="field">
+            <span className="field-l">Region</span>
+            <input value={form.region} onChange={(e) => set("region", e.target.value)} placeholder="e.g. Northeast / NE-04" />
+          </label>
+          <div className="field">
+            <span className="field-l">Phase</span>
+            <select className="select-ish mono" value={form.phase} onChange={(e) => set("phase", e.target.value)}>
+              {["Planning","Scheduled","COI","Deployment","Live"].map((p) => <option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <label className="field">
+            <span className="field-l">Owner person</span>
+            <input value={form.ownerPerson} onChange={(e) => set("ownerPerson", e.target.value)} placeholder="e.g. Jordan Reyes" />
+          </label>
+          <label className="field">
+            <span className="field-l">Go-live target</span>
+            <input className="mono" value={form.scheduledLive} onChange={(e) => set("scheduledLive", e.target.value)} placeholder="Jun 15, 2026" />
+          </label>
+        </div>
+        <div className="flag-foot">
+          <span className="muted-tx mono">* required</span>
+          <div className="grow" />
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn primary" disabled={!form.id.trim() || !form.retailer.trim()}>
+            <Icon.plus /> Add store
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
+// TEAM MANAGER MODAL
+// Add, edit, remove team members
+// ============================================================
+function TeamModal({ open, onClose, team, onSave }) {
+  const [members, setMembers] = useState(team);
+  const [editIdx, setEditIdx] = useState(null);
+  const [form, setForm] = useState(null);
+
+  useEffect(() => { if (open) { setMembers(team); setEditIdx(null); setForm(null); } }, [open, team]);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key === "Escape") { if (editIdx !== null) { setEditIdx(null); setForm(null); } else onClose(); } };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose, editIdx]);
+
+  if (!open) return null;
+
+  const startEdit = (i) => {
+    setEditIdx(i);
+    setForm(i === "new"
+      ? { name: "", role: "", team: "Implementation", load: "active", initials: "", since: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}) }
+      : { ...members[i] });
+  };
+
+  const saveEdit = () => {
+    if (!form.name.trim()) return;
+    const initials = form.initials.trim() ||
+      form.name.trim().split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    const member = { ...form, initials };
+    if (editIdx === "new") {
+      setMembers((m) => [...m, member]);
+    } else {
+      setMembers((m) => m.map((x, i) => i === editIdx ? member : x));
+    }
+    setEditIdx(null);
+    setForm(null);
+  };
+
+  const remove = (i) => {
+    setMembers((m) => m.filter((_, idx) => idx !== i));
+  };
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <div className="ai-modal team-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><Icon.flag /><span>Team members</span></div>
+          <div className="grow" />
+          <span className="muted-tx mono"><Kbd>esc</Kbd></span>
+          <button className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+
+        <div className="team-modal-body">
+          {/* Member list */}
+          <ul className="team-edit-list">
+            {members.map((m, i) => (
+              <li key={i} className={cx("team-edit-row", editIdx === i && "is-editing")}>
+                {editIdx === i ? (
+                  <div className="team-inline-form">
+                    <input className="team-field" placeholder="Full name *" value={form.name} onChange={(e) => setForm((f) => ({...f, name: e.target.value}))} autoFocus />
+                    <input className="team-field" placeholder="Role / title" value={form.role} onChange={(e) => setForm((f) => ({...f, role: e.target.value}))} />
+                    <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f) => ({...f, team: e.target.value}))}>
+                      {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+                    </select>
+                    <select className="select-ish mono" value={form.load} onChange={(e) => setForm((f) => ({...f, load: e.target.value}))}>
+                      {["primary","active","watching"].map((l) => <option key={l}>{l}</option>)}
+                    </select>
+                    <input className="team-field mono" placeholder="Initials (auto)" value={form.initials} onChange={(e) => setForm((f) => ({...f, initials: e.target.value}))} style={{width: 70}} />
+                    <div className="team-form-actions">
+                      <button className="btn primary sm" onClick={saveEdit} disabled={!form.name.trim()}><Icon.check /> Save</button>
+                      <button className="btn ghost sm" onClick={() => { setEditIdx(null); setForm(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="avatar avatar-sm mono">{m.initials}</span>
+                    <div className="contact-text">
+                      <div className="contact-name">{m.name}</div>
+                      <div className="contact-sub">{m.role} · {m.team}</div>
+                    </div>
+                    <Pill tone={m.load === "primary" ? "watch" : "info"}>{m.load}</Pill>
+                    <button className="btn ghost sm" onClick={() => startEdit(i)}>Edit</button>
+                    <button className="btn ghost sm" onClick={() => remove(i)} style={{color:"var(--bad)"}}>Remove</button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {/* Add new */}
+          {editIdx === "new" ? (
+            <div className="team-inline-form team-new-form">
+              <input className="team-field" placeholder="Full name *" value={form.name} onChange={(e) => setForm((f) => ({...f, name: e.target.value}))} autoFocus />
+              <input className="team-field" placeholder="Role / title" value={form.role} onChange={(e) => setForm((f) => ({...f, role: e.target.value}))} />
+              <select className="select-ish mono" value={form.team} onChange={(e) => setForm((f) => ({...f, team: e.target.value}))}>
+                {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+              </select>
+              <select className="select-ish mono" value={form.load} onChange={(e) => setForm((f) => ({...f, load: e.target.value}))}>
+                {["primary","active","watching"].map((l) => <option key={l}>{l}</option>)}
+              </select>
+              <div className="team-form-actions">
+                <button className="btn primary sm" onClick={saveEdit} disabled={!form.name.trim()}><Icon.plus /> Add</button>
+                <button className="btn ghost sm" onClick={() => { setEditIdx(null); setForm(null); }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className="btn ghost" style={{marginTop: 8}} onClick={() => startEdit("new")}>
+              <Icon.plus /> Add team member
+            </button>
+          )}
+        </div>
+
+        <div className="flag-foot">
+          <span className="muted-tx mono">{members.length} members</span>
+          <div className="grow" />
+          <button className="btn ghost" onClick={onClose}>Cancel</button>
+          <button className="btn primary" onClick={() => onSave(members)}><Icon.check /> Save team</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 </script>
 </body>
 </html>

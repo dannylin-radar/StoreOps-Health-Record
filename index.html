@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>StoreOps · Health Record</title>
+
+<!-- ─── Preconnect ─────────────────────────────────────────────────────── -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+
+<!-- ─── App config ─────────────────────────────────────────────────────── -->
+<!--
+  Supabase + AI credentials.  For local dev you can paste values directly.
+  For production, inject this block server-side or use a bundler / env vars
+  (see supabase.js for the full options).
+
+  NEVER commit real keys to git.  Either:
+    • Use a build-time injection step that reads process.env
+    • Serve this file from an edge function that injects the values
+    • Store keys in a .env file and use Vite / Webpack / esbuild
+-->
+<script>
+  window.__STOREOPS_CONFIG__ = {
+    supabaseUrl:     "",   // e.g. "https://xxxx.supabase.co"
+    supabaseAnonKey: "",   // your project anon/public key
+    anthropicKey:    "",   // DEV ONLY — use the ai-proxy Edge Function in prod
+  };
+</script>
+
+<!-- ─── Tweak defaults ────────────────────────────────────────────────── -->
+<!--
+  The /*EDITMODE-BEGIN*/…/*EDITMODE-END*/ markers let a compatible host
+  (e.g. Claude's artifact runner) persist tweak edits back to disk.
+  Values can be changed here for a permanent default.
+-->
+<script>
+  window.__TWEAK_DEFAULTS__ = /*EDITMODE-BEGIN*/{
+    "dark":       false,
+    "density":    "compact",
+    "accentHue":  275,
+    "showRail":   true,
+    "showKbd":    true,
+    "showPhase":  true
+  }/*EDITMODE-END*/;
+</script>
+
+<!-- ─── React 18 (UMD, CDN) ──────────────────────────────────────────── -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
+        integrity="sha384-nCDFuSwKHNvQ6ESbV7/YtUCfNS3EVJBRa5VWZP8LJJ0rSKEjN0X5YZHzAJ1IgL4"
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
+        integrity="sha384-hL+t3p30Tt9NN4AhMjvGFG+bJ6Hk8YN4MOrP8LT6eiT+hxBSbXGMPJkMTXNH3DP"
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+        integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+        crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!--
+  Load order matters with Babel standalone:
+  1. tweaks-panel.jsx  — registers useTweaks + panel components on window
+  2. app.jsx           — main application; references those globals
+-->
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

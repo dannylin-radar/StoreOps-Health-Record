@@ -128,8 +128,8 @@ body {
 
 /* APP SHELL */
 .app {
-  display: grid;
-  grid-template-columns: 232px 1fr;
+  display: flex;
+  flex-direction: row;
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
@@ -143,6 +143,8 @@ body {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  width: 100%;
+  min-width: 0;
 }
 .leftnav-head {
   display: flex; align-items: center; gap: 8px;
@@ -442,8 +444,8 @@ body {
 
 /* CONTENT */
 .content {
-  display: grid;
-  grid-template-columns: 1fr 320px;
+  display: flex;
+  flex-direction: row;
   flex: 1; min-height: 0; overflow: hidden;
 }
 .content-main {
@@ -461,6 +463,8 @@ body {
   background: var(--rail-bg);
   overflow-y: auto;
   padding: var(--pad-3) var(--pad-3) 80px;
+  width: 100%;
+  min-width: 0;
 }
 .rail::-webkit-scrollbar { width: 10px; }
 .rail::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 5px; }
@@ -909,7 +913,7 @@ body {
   .snap-grid > .snap:nth-last-child(-n+3) { border-bottom: 0; }
 }
 @media (max-width: 1100px) {
-  .content { grid-template-columns: 1fr; }
+  .content { flex-direction: column; }
   .rail { display: none; }
 }
 
@@ -1093,6 +1097,111 @@ button:focus-visible { outline-offset: 1px; }
 /* TOAST ERROR */
 .toast-error { background: var(--bad); }
 .toast-error svg { color: white; }
+
+/* ── RESIZE HANDLES ─────────────────────────────────────────── */
+.resize-handle {
+  position: absolute; top: 0; bottom: 0;
+  width: 6px; cursor: col-resize; z-index: 20;
+  background: transparent;
+  transition: background .15s;
+}
+.resize-handle:hover, .resize-handle:active {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+.resize-handle-right { right: -3px; }
+.resize-handle-left  { left:  -3px; }
+
+/* ── NAV SEARCH ─────────────────────────────────────────────── */
+.nav-search-wrap {
+  display: flex; align-items: center; gap: 6px;
+  margin: 4px 8px 2px;
+  padding: 0 8px;
+  height: 26px;
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  background: var(--bg-elev); color: var(--muted-fg);
+  flex-shrink: 0;
+}
+.nav-search-input {
+  flex: 1; border: 0; background: transparent; outline: none;
+  font: inherit; font-size: var(--t12); color: var(--fg);
+  min-width: 0;
+}
+.nav-search-clear {
+  background: transparent; border: 0; color: var(--muted-fg);
+  cursor: pointer; font-size: 14px; padding: 0; line-height: 1;
+  flex-shrink: 0;
+}
+.nav-search-clear:hover { color: var(--fg); }
+
+/* ── NAV STORE ROW — show delete on hover ───────────────────── */
+.nav-store-full { position: relative; padding-right: 4px !important; }
+.nav-store-full:hover .nav-store-delete { opacity: 1 !important; }
+.nav-store-delete:hover { background: var(--bad-soft) !important; border-color: var(--bad) !important; }
+
+/* NOTE EDIT/DELETE MENU */
+.note-menu {
+  position: absolute; right: 0; top: 24px; z-index: 20;
+  background: var(--bg-elev); border: 1px solid var(--border-strong);
+  border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  min-width: 100px; overflow: hidden;
+}
+.note-menu-item {
+  display: block; width: 100%; text-align: left;
+  padding: 7px 12px; border: 0; background: transparent;
+  font: inherit; font-size: var(--t13); color: var(--fg);
+  cursor: pointer;
+}
+.note-menu-item:hover { background: var(--hover); }
+.note-menu-delete { color: var(--bad); }
+.note-menu-delete:hover { background: var(--bad-soft); }
+
+/* NOTE EDIT FORM (inline in timeline) */
+.note-edit-form {
+  margin-top: 6px; border: 1px solid var(--accent);
+  border-radius: var(--radius); overflow: hidden; background: var(--bg);
+}
+.note-edit-form input, .note-edit-form textarea {
+  width: 100%; border: 0; border-bottom: 1px solid var(--border);
+  padding: 7px 10px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: transparent; outline: none; resize: vertical;
+}
+.note-edit-form textarea { line-height: 1.5; }
+
+/* EDITABLE SNAP BLOCKS */
+.snap-editable { cursor: pointer; transition: background .1s; }
+.snap-editable:hover { background: var(--hover); }
+.snap-editable:hover .snap-edit-hint { opacity: 1; }
+.snap-edit-hint {
+  font-size: 10px; color: var(--accent-fg); opacity: 0;
+  margin-top: 2px; transition: opacity .15s;
+}
+.snap-edit-form { display: flex; flex-direction: column; gap: 4px; }
+.snap-edit-input {
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  padding: 4px 7px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+  resize: vertical; width: 100%;
+}
+
+/* CHECKLIST — editable */
+.checklist-editable .check-box { cursor: pointer; border: 0; background: transparent; padding: 0; }
+.checklist-editable .check-box.is-on { background: var(--accent); border-radius: 3px; border: 1px solid var(--accent); }
+.checklist-new-input {
+  flex: 1; border: 1px solid var(--accent); border-radius: var(--radius);
+  height: 24px; padding: 0 8px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+}
+
+/* AI COMING SOON */
+.ai-coming-soon {
+  border: 1px dashed var(--border-2); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 10px; text-align: center;
+  background: var(--accent-soft);
+}
+.ai-coming-icon { display: block; color: var(--accent); margin-bottom: 6px; }
+.ai-coming-icon svg { width: 20px; height: 20px; }
+.ai-coming-title { margin: 0 0 6px; font-weight: 600; font-size: var(--t13); color: var(--fg); }
+.ai-coming-desc { margin: 0; font-size: var(--t12); color: var(--fg-2); line-height: 1.55; text-align: left; }
 </style>
 <script>
   window.__STOREOPS_CONFIG__ = {
@@ -2003,53 +2112,163 @@ function TabBar({ active, onSelect }) {
 }
 
 // ============================================================
-// OVERVIEW (snapshot blocks)
+// GLOBAL CHECKLIST — stored in localStorage, same across stores
 // ============================================================
-function Overview() {
+const CHECKLIST_KEY = "storeops_checklist_items";
+const CHECKLIST_DONE_KEY = "storeops_checklist_done";
+
+function getChecklistItems() {
+  try {
+    const stored = localStorage.getItem(CHECKLIST_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return ["Site Survey", "Store Design", "COI/Permits", "Install crew confirmed", "Day-of contact tree"];
+}
+function saveChecklistItems(items) {
+  try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(items)); } catch {}
+}
+function getChecklistDone(storeId) {
+  try {
+    const stored = localStorage.getItem(`${CHECKLIST_DONE_KEY}_${storeId}`);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return {};
+}
+function saveChecklistDone(storeId, done) {
+  try { localStorage.setItem(`${CHECKLIST_DONE_KEY}_${storeId}`, JSON.stringify(done)); } catch {}
+}
+
+// ============================================================
+// OVERVIEW (snapshot blocks) — editable fields
+// ============================================================
+function Overview({ store = STORE, onSaveStore }) {
+  // Editable snap fields
+  const [editField, setEditField] = useState(null); // which field is being edited
+  const [editVal, setEditVal]     = useState("");
+
+  // Checklist
+  const [checkItems, setCheckItems] = useState(getChecklistItems);
+  const [checkDone, setCheckDone]   = useState(() => getChecklistDone(store.id));
+  const [newItem, setNewItem]       = useState("");
+  const [addingItem, setAddingItem] = useState(false);
+
+  const doneCount = checkItems.filter((_, i) => checkDone[i]).length;
+
+  const startEdit = (field, currentVal) => { setEditField(field); setEditVal(currentVal || ""); };
+  const saveField = (field) => {
+    if (onSaveStore) onSaveStore({ ...store, [field]: editVal.trim() });
+    setEditField(null);
+  };
+  const cancelEdit = () => setEditField(null);
+
+  const toggleCheck = (i) => {
+    const next = { ...checkDone, [i]: !checkDone[i] };
+    setCheckDone(next);
+    saveChecklistDone(store.id, next);
+  };
+  const addCheckItem = () => {
+    if (!newItem.trim()) return;
+    const next = [...checkItems, newItem.trim()];
+    setCheckItems(next);
+    saveChecklistItems(next);
+    setNewItem(""); setAddingItem(false);
+  };
+  const removeCheckItem = (i) => {
+    const next = checkItems.filter((_, idx) => idx !== i);
+    setCheckItems(next);
+    saveChecklistItems(next);
+    const nextDone = { ...checkDone };
+    delete nextDone[i];
+    // re-index done state
+    const reindexed = {};
+    next.forEach((_, newIdx) => {
+      const oldIdx = checkItems.indexOf(next[newIdx]);
+      if (checkDone[oldIdx]) reindexed[newIdx] = true;
+    });
+    setCheckDone(reindexed);
+    saveChecklistDone(store.id, reindexed);
+  };
+
+  const EditableSnap = ({ label, field, value, sub, tone, wide, mono, multiLine }) => {
+    const isEditing = editField === field;
+    return (
+      <div className={cx("snap snap-editable", wide && "snap-wide")} onClick={() => !isEditing && startEdit(field, value)}>
+        <div className="snap-label">{label}</div>
+        {isEditing ? (
+          <div className="snap-edit-form" onClick={(e) => e.stopPropagation()}>
+            {multiLine
+              ? <textarea className="snap-edit-input" rows={2} autoFocus value={editVal} onChange={(e) => setEditVal(e.target.value)}
+                  onKeyDown={(e) => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); saveField(field); } if (e.key==="Escape") cancelEdit(); }} />
+              : <input className="snap-edit-input" autoFocus value={editVal} onChange={(e) => setEditVal(e.target.value)}
+                  onKeyDown={(e) => { if (e.key==="Enter") saveField(field); if (e.key==="Escape") cancelEdit(); }} />
+            }
+            <div style={{display:"flex",gap:4,marginTop:4}}>
+              <button className="btn primary sm" onClick={() => saveField(field)}><Icon.check /></button>
+              <button className="btn ghost sm" onClick={cancelEdit}>✕</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className={cx("snap-value", mono && "mono")}>
+              {tone && <Dot tone={tone} />}
+              <span>{value}</span>
+            </div>
+            <div className="snap-sub">{sub}</div>
+            <div className="snap-edit-hint">click to edit</div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="overview">
       <div className="snap-grid">
-        <SnapBlock label="Active tracks" value="COI · Deployment" sub="2 of 5 in flight" tone="yellow" />
-        <SnapBlock label="Health" value="Yellow" sub="Auto-flagged Apr 30" tone="yellow" />
-        <SnapBlock label="Owner" value="Implementation" sub="Priya Shah" />
-        <SnapBlock label="Next action" value="Sign COI rev. 3" sub={`Due ${STORE.due} · ${STORE.dueDelta}`} tone="yellow" wide />
-        <SnapBlock label="Risk level" value="Medium" sub="Install crew held until May 12" tone="yellow" />
-        <SnapBlock label="Days to go-live" value="18" sub={`${STORE.scheduledLive}`} mono />
+        <EditableSnap label="Phase" field="phase" value={store.phase} sub={`Health: ${store.health}`} tone={store.health === "yellow" ? "yellow" : store.health === "red" ? "red" : "green"} />
+        <EditableSnap label="Health" field="health" value={store.health?.charAt(0).toUpperCase() + store.health?.slice(1)} sub="Click to change" tone={store.health} />
+        <EditableSnap label="Owner" field="ownerPerson" value={store.ownerPerson} sub={store.owner} />
+        <EditableSnap label="Next action" field="nextAction" value={store.nextAction} sub={store.due ? `Due ${store.due}` : "No due date"} tone="yellow" wide multiLine />
+        <EditableSnap label="Risk level" field="risk" value={store.risk?.charAt(0).toUpperCase() + store.risk?.slice(1)} sub="Click to edit" tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"} />
+        <EditableSnap label="Go-live target" field="scheduledLive" value={store.scheduledLive} sub={store.openedOn ? `Opened ${store.openedOn}` : ""} mono />
       </div>
 
       <section className="block">
         <header className="block-head">
-          <h3>Active blockers</h3>
-          <span className="block-meta mono">2 open · 1 awaiting external</span>
-        </header>
-        <div className="blocker-list">
-          <BlockerRow num="01" title="COI rev. 3 — awaiting retailer signature" who="Marcus Webb · WFM Legal" age="3d" tone="blocker" />
-          <BlockerRow num="02" title="20A circuit work order — needs retailer ops sign-off" who="Dan Ortiz · WFM Store mgr" age="—" tone="watch" />
-        </div>
-      </section>
-
-      <section className="block">
-        <header className="block-head">
           <h3>Readiness checklist</h3>
-          <span className="block-meta mono">2/3 complete</span>
+          <span className="block-meta mono">{doneCount}/{checkItems.length} complete</span>
         </header>
         <ul className="checklist">
-          {[
-          ["Site Survey", true],
-          ["Store Design", true],
-          ["COI/Permits", false, "blocker"]].
-          map(([label, done, tone], i) =>
-          <li key={i} className={cx("check-row", done && "is-done")}>
-              <span className={cx("check-box", done && "is-on")}>{done && <Icon.check />}</span>
+          {checkItems.map((label, i) => (
+            <li key={i} className={cx("check-row checklist-editable", checkDone[i] && "is-done")}>
+              <button className={cx("check-box", checkDone[i] && "is-on")} onClick={() => toggleCheck(i)}>
+                {checkDone[i] && <Icon.check />}
+              </button>
               <span className="mono check-num">{String(i + 1).padStart(2, "0")}</span>
               <span className="check-label">{label}</span>
-              {tone && !done && <Pill tone={tone}>{tone === "blocker" ? "blocker" : "watch"}</Pill>}
+              <button className="iconbtn xs" style={{opacity:0.4,marginLeft:"auto"}} title="Remove"
+                onClick={() => removeCheckItem(i)}>✕</button>
+            </li>
+          ))}
+          {addingItem ? (
+            <li className="check-row">
+              <span className="check-box" />
+              <span className="mono check-num">{String(checkItems.length + 1).padStart(2,"0")}</span>
+              <input className="checklist-new-input" autoFocus placeholder="New checklist item…"
+                value={newItem} onChange={(e) => setNewItem(e.target.value)}
+                onKeyDown={(e) => { if (e.key==="Enter") addCheckItem(); if (e.key==="Escape") { setAddingItem(false); setNewItem(""); } }} />
+              <button className="btn primary sm" onClick={addCheckItem} disabled={!newItem.trim()}><Icon.check /></button>
+              <button className="btn ghost sm" onClick={() => { setAddingItem(false); setNewItem(""); }}>✕</button>
+            </li>
+          ) : (
+            <li className="check-row" style={{borderBottom:0}}>
+              <button className="btn ghost sm" style={{margin:"4px var(--pad-3)"}} onClick={() => setAddingItem(true)}>
+                <Icon.plus /> Add item
+              </button>
             </li>
           )}
         </ul>
       </section>
     </div>);
-
 }
 
 function SnapBlock({ label, value, sub, tone, wide, mono }) {
@@ -2083,7 +2302,7 @@ function BlockerRow({ num, title, who, age, tone }) {
 // ============================================================
 // TIMELINE
 // ============================================================
-function Timeline({ entries }) {
+function Timeline({ entries, onEdit, onDelete }) {
   const [filter, setFilter] = useState("all");
   const filters = [
   { id: "all", label: "All", n: entries.length },
@@ -2105,14 +2324,26 @@ function Timeline({ entries }) {
         <span className="muted-tx mono">Sorted: newest first</span>
       </div>
       <ol className="timeline">
-        {list.map((e, i) => <TimelineItem key={i} e={e} />)}
+        {list.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
       </ol>
     </div>);
 
 }
 
-function TimelineItem({ e }) {
+function TimelineItem({ e, onEdit, onDelete }) {
   const KIND_LABEL = { note: "NOTE", task: "TASK", comm: "COMM", status: "STATUS" };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing]   = useState(false);
+  const [editBody, setEditBody] = useState(e.body || "");
+  const [editTitle, setEditTitle] = useState(e.title || "");
+  const canEdit = e.kind === "note" && onEdit;
+
+  const saveEdit = () => {
+    onEdit && onEdit(e, { title: editTitle.trim() || editBody.trim().slice(0,80), body: editBody.trim() });
+    setEditing(false);
+    setMenuOpen(false);
+  };
+
   return (
     <li className={cx("tl-item", `tl-${e.kind}`)}>
       <div className="tl-rail">
@@ -2133,24 +2364,38 @@ function TimelineItem({ e }) {
           {e.sev && e.sev !== "info" && <Pill tone={e.sev}>{e.sev}</Pill>}
           {e.action && <Pill tone="accent">action · due {e.due}</Pill>}
           <div className="grow" />
-          <button className="iconbtn xs" title="More"><Icon.dot3 /></button>
+          {canEdit && (
+            <div style={{position:"relative"}}>
+              <button className="iconbtn xs" onClick={() => setMenuOpen((o) => !o)}><Icon.dot3 /></button>
+              {menuOpen && (
+                <div className="note-menu">
+                  <button className="note-menu-item" onClick={() => { setEditing(true); setEditBody(e.body||""); setEditTitle(e.title||""); setMenuOpen(false); }}>Edit</button>
+                  <button className="note-menu-item note-menu-delete" onClick={() => { onDelete && onDelete(e); setMenuOpen(false); }}>Delete</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <div className="tl-title">{e.title}</div>
-        {e.body && <div className="tl-text">{e.body}</div>}
-        {e.attachment &&
-        <div className="tl-attach">
-            <Icon.paper />
-            <span className="mono">{e.attachment}</span>
+        {editing ? (
+          <div className="note-edit-form">
+            <input className="note-title-in" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title…" />
+            <textarea rows={3} value={editBody} onChange={(e) => setEditBody(e.target.value)}
+              onKeyDown={(e) => { if ((e.metaKey||e.ctrlKey) && e.key==="Enter") { e.preventDefault(); saveEdit(); } }} />
+            <div style={{display:"flex",gap:6,justifyContent:"flex-end",padding:"6px 0"}}>
+              <button className="btn ghost sm" onClick={() => setEditing(false)}>Cancel</button>
+              <button className="btn primary sm" onClick={saveEdit}><Icon.check /> Save</button>
+            </div>
           </div>
-        }
-        {e.mentions &&
-        <div className="tl-mentions">
-            {e.mentions.map((m) => <span key={m} className="mention mono">{m}</span>)}
-          </div>
-        }
+        ) : (
+          <>
+            <div className="tl-title">{e.title}</div>
+            {e.body && <div className="tl-text">{e.body}</div>}
+          </>
+        )}
+        {e.attachment && <div className="tl-attach"><Icon.paper /><span className="mono">{e.attachment}</span></div>}
+        {e.mentions && <div className="tl-mentions">{e.mentions.map((m) => <span key={m} className="mention mono">{m}</span>)}</div>}
       </div>
     </li>);
-
 }
 
 // ============================================================
@@ -2197,18 +2442,17 @@ function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam }) {
       <section className="rail-section">
         <div className="rail-head">
           <h4>AI summary</h4>
-          <span className="muted-tx mono">updated 3m ago</span>
+          <span className="pill pill-accent" style={{fontSize:"10px"}}>coming soon</span>
         </div>
-        <p className="ai-summary-text">
-          Store is in <b>COI day 10</b> (target ≤7), health auto-flagged yellow Apr 30. Single
-          external blocker: <b>signed COI rev. 3</b> from WFM legal (Marcus Webb), expected back Mon May 4.
-          Install crew is held for May 18; release date is May 12 if COI doesn't clear.
-        </p>
-        <div className="ai-cite">
-          <span className="muted-tx mono">sources:</span>
-          <a className="cite mono">N-2241</a>
-          <a className="cite mono">N-2235</a>
-          <a className="cite mono">T-1041</a>
+        <div className="ai-coming-soon">
+          <span className="ai-coming-icon"><Icon.spark /></span>
+          <p className="ai-coming-title">Store Intelligence</p>
+          <p className="ai-coming-desc">
+            The AI assistant will automatically summarize each store's health status, surface
+            blockers, flag overdue actions, and answer questions about notes, tasks, and comms —
+            all grounded in real records. Ask things like "What's blocking this store?" or
+            "Draft a status email to the retailer."
+          </p>
         </div>
         <button className="btn primary full" onClick={onAskAI}>
           <Icon.spark /> Ask about this store <Kbd>⌘J</Kbd>
@@ -2487,7 +2731,7 @@ function Comms() {
 // ============================================================
 // NOTES (composer + list filtered to notes)
 // ============================================================
-function Notes({ notes, composerRef, onPost }) {
+function Notes({ notes, composerRef, onPost, onEdit, onDelete }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sev, setSev] = useState("info");
@@ -2566,7 +2810,7 @@ function Notes({ notes, composerRef, onPost }) {
         </div>
       </div>
       <ol className="timeline">
-        {notes.map((e, i) => <TimelineItem key={i} e={e} />)}
+        {notes.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
       </ol>
     </div>);
 
@@ -2656,25 +2900,31 @@ const SB = (() => {
 
   async function req(path, opts = {}) {
     if (!configured()) throw new Error("supabase_not_configured");
+    const method = opts.method || "GET";
+    // PATCH and DELETE return 204 no-content by default; use return=minimal to avoid parse errors
+    const defaultPrefer = (method === "PATCH" || method === "DELETE") ? "return=minimal" : "return=representation";
     const res = await fetch(`${url()}/rest/v1${path}`, {
-      method: opts.method || "GET",
+      method,
       headers: {
         apikey: key(),
         Authorization: `Bearer ${key()}`,
         "Content-Type": "application/json",
-        Prefer: opts.prefer || "return=representation",
+        Prefer: opts.prefer || defaultPrefer,
         ...opts.headers,
       },
       body: opts.body != null ? JSON.stringify(opts.body) : undefined,
     });
-    if (res.status === 204) return null;
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || data?.error || "supabase_error");
+    if (res.status === 204 || res.headers.get("content-length") === "0") return null;
+    const text = await res.text();
+    if (!text) return null;
+    const data = JSON.parse(text);
+    if (!res.ok) throw new Error(data?.message || data?.error || `supabase_error_${res.status}`);
     return data;
   }
 
   return {
     configured,
+    req,  // expose for direct use
     async getEntries(storeId) {
       return req(`/timeline_entries?store_id=eq.${storeId}&order=created_at.desc&limit=200`);
     },
@@ -2690,7 +2940,7 @@ const SB = (() => {
       return Array.isArray(rows) ? rows[0] : rows;
     },
     async patchTask(id, fields) {
-      return req(`/tasks?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", body: fields });
+      return req(`/tasks?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", prefer: "return=minimal", body: fields });
     },
     async getFlags(storeId) {
       return req(`/flags?store_id=eq.${storeId}&resolved=eq.false&order=created_at.desc`);
@@ -2729,14 +2979,14 @@ const SB = (() => {
       return Array.isArray(rows) ? rows[0] : rows;
     },
     async patchStore(id, fields) {
-      return req(`/stores?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", body: fields });
+      return req(`/stores?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", prefer: "return=minimal", body: fields });
     },
     // Team members
     async getTeam(storeId) {
       return req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.asc`);
     },
     async replaceTeam(storeId, members) {
-      await req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}`, { method: "DELETE", prefer: "return=minimal" });
+      await req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
       if (!members.length) return [];
       const rows = await req("/team_members", { method: "POST", body: members.map((m) => ({ ...m, store_id: storeId })) });
       return rows;
@@ -2750,11 +3000,15 @@ const SB = (() => {
       return Array.isArray(rows) ? rows[0] : rows;
     },
     async resolveBlocker(id) {
-      return req(`/blockers?id=eq.${id}`, { method: "PATCH", body: { resolved: true, updated_at: new Date().toISOString() } });
+      return req(`/blockers?id=eq.${id}`, { method: "PATCH", prefer: "return=minimal", body: { resolved: true, updated_at: new Date().toISOString() } });
     },
     // Resolve flag
     async resolveFlag(id) {
-      return req(`/flags?id=eq.${id}`, { method: "PATCH", body: { resolved: true } });
+      return req(`/flags?id=eq.${id}`, { method: "PATCH", prefer: "return=minimal", body: { resolved: true } });
+    },
+    // Delete store
+    async deleteStore(id) {
+      return req(`/stores?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
     },
     // Task notes
     async getTaskNotes(taskId) {
@@ -3191,17 +3445,24 @@ function Files({ files, onUpload }) {
 // ============================================================
 // LEFT NAV — shows live counts, blockers, tasks, flags
 // ============================================================
-function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], onAddStore, onNavSelect, navView }) {
+function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], onAddStore, onNavSelect, navView, activeStoreId, onSelectStore, onDeleteStore }) {
+  const [search, setSearch] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null); // store id pending delete
   const openTasks    = allTasks.filter((t) => t.state !== "Done");
   const openFlags    = allFlags.filter((f) => !f.resolved);
   const openBlockers = allBlockers.filter((b) => !b.resolved);
 
   const navItems = [
-    { id: "store",    label: "Store view",  count: null },
-    { id: "tasks",    label: "All tasks",   count: openTasks.length    || null },
-    { id: "flags",    label: "All flags",   count: openFlags.length    || null },
-    { id: "blockers", label: "All blockers",count: openBlockers.length || null },
+    { id: "store",    label: "Store view"  },
+    { id: "tasks",    label: "Tasks",    count: openTasks.length    },
+    { id: "flags",    label: "Flags",    count: openFlags.length    },
+    { id: "blockers", label: "Blockers", count: openBlockers.length },
   ];
+
+  const filtered = stores.filter((s) => {
+    const q = search.toLowerCase();
+    return !q || s.id.toLowerCase().includes(q) || (s.name||"").toLowerCase().includes(q) || (s.retailer||"").toLowerCase().includes(q) || (s.storeNum||"").includes(q);
+  });
 
   return (
     <nav className="leftnav">
@@ -3218,8 +3479,8 @@ function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], 
           <li key={item.id} className={cx("nav-item", navView===item.id && "is-active")}
             onClick={() => onNavSelect(item.id)}>
             <span className="nav-label">{item.label}</span>
-            {item.count != null && item.count > 0 && (
-              <span className={cx("nav-count mono", item.id==="blockers" && "nav-count-blocker")}>{item.count}</span>
+            {item.count > 0 && (
+              <span className={cx("nav-count mono", item.id==="blockers" && item.count > 0 && "nav-count-blocker")}>{item.count}</span>
             )}
           </li>
         ))}
@@ -3228,13 +3489,41 @@ function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], 
       <div className="nav-section-label">
         Stores <span className="nav-count mono">{stores.length}</span>
       </div>
+
+      {/* Search */}
+      <div className="nav-search-wrap">
+        <Icon.search />
+        <input
+          className="nav-search-input"
+          placeholder="Search by store # or name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && <button className="nav-search-clear" onClick={() => setSearch("")}>×</button>}
+      </div>
+
       <ul className="nav-list nav-pinned" style={{flex:1,overflowY:"auto"}}>
-        {stores.map((s) => (
-          <li key={s.id} className={cx("nav-item nav-store", s.id === STORE.id && "is-active")}
-            onClick={() => onNavSelect("store")}>
+        {filtered.length === 0 && (
+          <li style={{padding:"8px 12px",color:"var(--muted-fg)",fontSize:"var(--t12)"}}>No stores match</li>
+        )}
+        {filtered.map((s) => (
+          <li key={s.id}
+            className={cx("nav-item nav-store nav-store-full", s.id === activeStoreId && navView==="store" && "is-active")}
+            onClick={() => { onSelectStore(s); onNavSelect("store"); }}>
             <Dot tone={s.health || "neutral"} />
-            <span className="mono nav-store-id">{s.id}</span>
-            <span className="nav-store-name">{s.name || s.retailer}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span className="mono nav-store-id">{s.id}</span>
+                <span className="nav-store-phase mono" style={{fontSize:10,color:"var(--muted-fg)",background:"var(--panel)",padding:"0 4px",borderRadius:2,border:"1px solid var(--border)"}}>{s.phase}</span>
+              </div>
+              <div className="nav-store-name" style={{fontSize:"var(--t12)",color:"var(--fg-2)",marginTop:1}}>{s.name || s.retailer}</div>
+            </div>
+            <button className="nav-store-delete iconbtn xs"
+              title="Delete store"
+              onClick={(e) => { e.stopPropagation(); setConfirmDelete(s.id); }}
+              style={{opacity:0,transition:"opacity .15s",color:"var(--bad)",flexShrink:0}}>
+              ×
+            </button>
           </li>
         ))}
       </ul>
@@ -3254,6 +3543,28 @@ function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], 
           </div>
         </div>
       </div>
+
+      {/* Delete confirm overlay */}
+      {confirmDelete && (
+        <div className="ai-modal-scrim" style={{zIndex:200}} onMouseDown={() => setConfirmDelete(null)}>
+          <div className="ai-modal" style={{width:"min(380px,90vw)",padding:0}} onMouseDown={(e) => e.stopPropagation()}>
+            <header className="ai-modal-head">
+              <div className="ai-modal-title" style={{color:"var(--bad)"}}>Delete store</div>
+            </header>
+            <div style={{padding:"16px 20px",fontSize:"var(--t13)",color:"var(--fg-2)"}}>
+              Are you sure you want to delete <strong className="mono">{confirmDelete}</strong>? This will also delete all its tasks, flags, notes, and files. This cannot be undone.
+            </div>
+            <div className="flag-foot">
+              <div className="grow" />
+              <button className="btn ghost" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="btn primary" style={{background:"var(--bad)",borderColor:"var(--bad)"}}
+                onClick={() => { onDeleteStore(confirmDelete); setConfirmDelete(null); }}>
+                Delete permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
@@ -3631,7 +3942,11 @@ function App() {
   const [editStoreOpen,  setEditStoreOpen]  = useState(false);
   const [addStoreOpen,   setAddStoreOpen]   = useState(false);
   const [teamOpen,       setTeamOpen]       = useState(false);
+  const [activeStoreId,  setActiveStoreId]  = useState(STORE.id);
+  const [navW,           setNavW]           = useState(232);
+  const [railW,          setRailW]          = useState(320);
   const composerRef = useRef();
+  const appRef      = useRef();
 
   // ── Load from Supabase ────────────────────────────────────
   useEffect(() => {
@@ -3856,6 +4171,89 @@ function App() {
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
+  // ── Select store ─────────────────────────────────────────
+  const selectStore = (s) => {
+    setActiveStoreId(s.id);
+    setStoreData(s);
+    setNavView("store");
+    setTab("overview");
+    // reload data for this store
+    if (!SB.configured()) return;
+    setLoading(true);
+    Promise.all([
+      SB.getEntries(s.id),
+      SB.getTasks(s.id),
+      SB.getFlags(s.id),
+      SB.getFiles(s.id),
+      SB.getTeam(s.id),
+      SB.getBlockers(s.id),
+    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles, dbTeam, dbBlockers]) => {
+      if (dbEntries?.length) setEntries(dbEntries.map(dbRowToEntry)); else setEntries(TIMELINE);
+      if (dbTasks?.length)   setLiveTasks(dbTasks.map(dbRowToTask));  else setLiveTasks([]);
+      if (dbFlags?.length)   setLiveFlags(dbFlags.map(dbRowToFlag));  else setLiveFlags([]);
+      if (dbFiles?.length)   setLiveFiles(dbFiles.map(dbRowToFile));  else setLiveFiles([]);
+      if (dbTeam?.length)    setLiveTeam(dbTeam.map((r) => ({name:r.name,role:r.role,team:r.team,load:r.load,initials:r.initials,since:r.since})));
+      if (dbBlockers?.length) setBlockers(dbBlockers.map(dbRowToBlocker)); else setBlockers([]);
+    }).catch((e) => setDbError(e.message))
+      .finally(() => setLoading(false));
+  };
+
+  // ── Delete store ──────────────────────────────────────────
+  const deleteStore = async (storeId) => {
+    setAllStores((ss) => ss.filter((s) => s.id !== storeId));
+    // If we deleted the active store, switch to first remaining
+    if (storeId === activeStoreId) {
+      const remaining = allStores.filter((s) => s.id !== storeId);
+      if (remaining.length > 0) selectStore(remaining[0]);
+    }
+    flashToast(`Store ${storeId} deleted`);
+    if (!SB.configured()) return;
+    try { await SB.deleteStore(storeId); } catch (e) { flashToast("Delete failed: " + e.message, true); }
+  };
+
+  // ── Drag-to-resize nav panel ──────────────────────────────
+  const startNavResize = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = navW;
+    const onMove = (ev) => { setNavW(Math.max(160, Math.min(420, startW + ev.clientX - startX))); };
+    const onUp   = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onUp);
+  };
+
+  // ── Drag-to-resize rail panel ─────────────────────────────
+  const startRailResize = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = railW;
+    const onMove = (ev) => { setRailW(Math.max(220, Math.min(520, startW - ev.clientX + startX))); };
+    const onUp   = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onUp);
+  };
+
+  // ── Edit note ─────────────────────────────────────────────
+  const editNote = async (entry, updates) => {
+    setEntries((es) => es.map((e) => e === entry ? { ...e, ...updates } : e));
+    flashToast("Note updated");
+    if (!SB.configured() || !entry.id) return;
+    try {
+      await SB.req(`/timeline_entries?id=eq.${entry.id}`, { method: "PATCH", prefer: "return=minimal", body: { title: updates.title, body: updates.body } });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
+  // ── Delete note ───────────────────────────────────────────
+  const deleteNote = async (entry) => {
+    if (!window.confirm("Delete this note?")) return;
+    setEntries((es) => es.filter((e) => e !== entry));
+    flashToast("Note deleted");
+    if (!SB.configured() || !entry.id) return;
+    try {
+      await SB.req(`/timeline_entries?id=eq.${entry.id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
+  };
+
   // ── Hotkeys ───────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e) => {
@@ -3883,16 +4281,24 @@ function App() {
   const isStoreView = navView === "store";
 
   return (
-    <div className="app">
-      <LeftNav
-        stores={allStores}
-        allTasks={liveTasks}
-        allFlags={liveFlags}
-        allBlockers={blockers}
-        onAddStore={() => setAddStoreOpen(true)}
-        onNavSelect={setNavView}
-        navView={navView}
-      />
+    <div className="app" ref={appRef} style={{"--nav-w": navW+"px", "--rail-w": railW+"px"}}>
+      {/* Left nav + resize handle */}
+      <div style={{display:"flex",position:"relative",width:"var(--nav-w)",flexShrink:0}}>
+        <LeftNav
+          stores={allStores}
+          allTasks={liveTasks}
+          allFlags={liveFlags}
+          allBlockers={blockers}
+          onAddStore={() => setAddStoreOpen(true)}
+          onNavSelect={setNavView}
+          navView={navView}
+          activeStoreId={activeStoreId}
+          onSelectStore={selectStore}
+          onDeleteStore={deleteStore}
+        />
+        <div className="resize-handle resize-handle-right" onMouseDown={startNavResize} title="Drag to resize" />
+      </div>
+
       <main className="main">
         {isStoreView && (
           <StoreHeader store={storeData} tweaks={tweaks}
@@ -3913,25 +4319,28 @@ function App() {
             {loading && <div className="loading-bar" />}
 
             {/* Global nav views */}
-            {navView === "tasks"    && <GlobalTasksView tasks={liveTasks} onStateChange={updateTaskState} storeId={STORE.id} flashToast={flashToast} />}
+            {navView === "tasks"    && <GlobalTasksView tasks={liveTasks} onStateChange={updateTaskState} storeId={activeStoreId} flashToast={flashToast} />}
             {navView === "flags"    && <GlobalFlagsView flags={liveFlags} onResolve={resolveFlag} />}
-            {navView === "blockers" && <GlobalBlockersView blockers={blockers} onAdd={addBlocker} onResolve={resolveBlocker} storeId={STORE.id} flashToast={flashToast} />}
+            {navView === "blockers" && <GlobalBlockersView blockers={blockers} onAdd={addBlocker} onResolve={resolveBlocker} storeId={activeStoreId} flashToast={flashToast} />}
 
             {/* Store tabs */}
-            {isStoreView && tab === "overview"  && <Overview flags={liveFlags} tasks={liveTasks} />}
-            {isStoreView && tab === "timeline"  && <Timeline entries={entries} />}
-            {isStoreView && tab === "notes"     && <Notes notes={entries.filter((e) => e.kind==="note")} composerRef={composerRef} onPost={postNote} />}
+            {isStoreView && tab === "overview"  && <Overview store={storeData} onSaveStore={saveStore} flags={liveFlags} tasks={liveTasks} />}
+            {isStoreView && tab === "timeline"  && <Timeline entries={entries} onEdit={editNote} onDelete={deleteNote} />}
+            {isStoreView && tab === "notes"     && <Notes notes={entries.filter((e) => e.kind==="note")} composerRef={composerRef} onPost={postNote} onEdit={editNote} onDelete={deleteNote} />}
             {isStoreView && tab === "tasks"     && (
               <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState}
                 blockers={blockers} onAddBlocker={addBlocker} onResolveBlocker={resolveBlocker}
-                storeId={STORE.id} flashToast={flashToast} />
+                storeId={activeStoreId} flashToast={flashToast} />
             )}
             {isStoreView && tab === "comms"     && <Comms />}
             {isStoreView && tab === "files"     && <Files files={liveFiles} onUpload={uploadFile} />}
             {isStoreView && tab === "audit"     && <Audit />}
           </div>
           {tweaks.showRail && isStoreView && (
-            <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} />
+            <div style={{display:"flex",position:"relative",width:"var(--rail-w)",flexShrink:0}}>
+              <div className="resize-handle resize-handle-left" onMouseDown={startRailResize} title="Drag to resize" />
+              <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} />
+            </div>
           )}
         </div>
       </main>

@@ -1202,6 +1202,24 @@ button:focus-visible { outline-offset: 1px; }
 .ai-coming-icon svg { width: 20px; height: 20px; }
 .ai-coming-title { margin: 0 0 6px; font-weight: 600; font-size: var(--t13); color: var(--fg); }
 .ai-coming-desc { margin: 0; font-size: var(--t12); color: var(--fg-2); line-height: 1.55; text-align: left; }
+
+/* CSV DROP ZONE */
+.csv-drop-zone {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 32px; border: 2px dashed var(--border-2); border-radius: var(--radius-lg);
+  background: var(--panel); cursor: pointer; color: var(--muted-fg);
+  font-size: var(--t13); transition: border-color .15s, background .15s;
+}
+.csv-drop-zone:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-fg); }
+.csv-drop-zone svg { width: 20px; height: 20px; }
+
+/* NAV STORE — ID only, no name */
+.nav-item.nav-store { padding-right: 6px; }
+.nav-store-delete { display: none; }
+.nav-item.nav-store:hover .nav-store-delete { display: inline-flex; }
+
+/* Remove resize handle styles */
+.resize-handle { display: none; }
 </style>
 <script>
   window.__STOREOPS_CONFIG__ = {
@@ -1745,13 +1763,13 @@ const PHASE_DETAIL = {
 };
 
 const TIMELINE = [
-{ t: "Apr 30 · 14:22", who: "Priya Shah", team: "Implementation", kind: "note", sev: "blocker", title: "COI rev. 3 sent — awaiting retailer signature",
+{ t: "Apr 30 · 14:22", who: activeUserRef.current, team: "Implementation", kind: "note", sev: "blocker", title: "COI rev. 3 sent — awaiting retailer signature",
   body: "Sent updated COI to Marcus (WFM legal) reflecting the additional named insured ask from rev. 2. ETA on return is Mon May 4 per Marcus.", action: true, due: "May 6", mentions: ["@deployment"] },
 { t: "Apr 30 · 11:08", who: "system", team: "—", kind: "status", title: "Health changed: green → yellow", body: "Auto-flag: COI in-flight >10 days." },
 { t: "Apr 29 · 16:50", who: "Jordan Reyes", team: "Deployment", kind: "task", title: "Reserved install crew (3p) for May 18 0500–1100", body: "Holding; will release May 12 if COI not cleared.", action: false },
 { t: "Apr 28 · 09:14", who: "Alex Chen", team: "Support", kind: "comm", title: "Email from Marcus Webb (WFM) — re: insurance language",
   body: "Marcus wants \"each location\" instead of \"site-specific\" in the additional insured clause. Looped legal.", attachment: "RE_ COI rev2 review.eml" },
-{ t: "Apr 27 · 13:02", who: "Priya Shah", team: "Implementation", kind: "note", sev: "watch", title: "Power audit complete — 2 of 6 fixtures need 20A circuits",
+{ t: "Apr 27 · 13:02", who: activeUserRef.current, team: "Implementation", kind: "note", sev: "watch", title: "Power audit complete — 2 of 6 fixtures need 20A circuits",
   body: "Existing panel has capacity. Electrician quoted $2,400, falls under retailer-side per MSA §4.2. Flagged Marcus.", attachment: "audit_WFM-1247.pdf" },
 { t: "Apr 24 · 10:30", who: "Sam Okafor", team: "Store Planning", kind: "note", sev: "info", title: "Planogram approved by category mgr",
   body: "Final planogram signed off by Lena (WFM grocery). 142 fixtures, endcap at aisle 7 confirmed." },
@@ -2731,7 +2749,7 @@ function Comms() {
 // ============================================================
 // NOTES (composer + list filtered to notes)
 // ============================================================
-function Notes({ notes, composerRef, onPost, onEdit, onDelete }) {
+function Notes({ notes, composerRef, onPost, onEdit, onDelete, activeUser }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sev, setSev] = useState("info");
@@ -2744,7 +2762,7 @@ function Notes({ notes, composerRef, onPost, onEdit, onDelete }) {
     const t = title.trim() || body.trim().split("\n")[0].slice(0, 80) || "(untitled note)";
     onPost({
       kind: "note",
-      who: "Priya Shah",
+      who: activeUserRef.current,
       team,
       sev,
       title: t,
@@ -2764,9 +2782,9 @@ function Notes({ notes, composerRef, onPost, onEdit, onDelete }) {
     <div className="notes">
       <div className="note-composer" ref={composerRef}>
         <div className="note-comp-head">
-          <span className="avatar avatar-sm mono">PS</span>
+          <span className="avatar avatar-sm mono">{(activeUser||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
           <span>New note</span>
-          <span className="muted-tx">· Priya Shah</span>
+          <span className="muted-tx">· {activeUser}</span>
           <div className="grow" />
           <span className="comp-label">severity</span>
           <div className="sev-seg">
@@ -3085,12 +3103,12 @@ function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast })
     if (!noteText.trim()) return;
     const now = new Date();
     const t   = `${now.toLocaleString("en-US",{month:"short",day:"numeric"})} · ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-    const optimistic = { id: Date.now(), who: "Priya Shah", body: noteText.trim(), created_at: new Date().toISOString(), t };
+    const optimistic = { id: Date.now(), who: activeUserRef.current, body: noteText.trim(), created_at: new Date().toISOString(), t };
     setNotes((ns) => [optimistic, ...ns]);
     setNoteText("");
     if (!SB.configured()) return;
     try {
-      await SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: "Priya Shah", body: optimistic.body });
+      await SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: activeUserRef.current, body: optimistic.body });
     } catch (e) { flashToast("Note sync failed: " + e.message, true); }
   };
 
@@ -3445,7 +3463,7 @@ function Files({ files, onUpload }) {
 // ============================================================
 // LEFT NAV — shows live counts, blockers, tasks, flags
 // ============================================================
-function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], onAddStore, onNavSelect, navView, activeStoreId, onSelectStore, onDeleteStore }) {
+function LeftNav({ stores=[], allTasks=[], allFlags=[], allBlockers=[], onAddStore, onImportCSV, onNavSelect, navView, activeStoreId, onSelectStore, onDeleteStore, activeUser, onChangeUser }) {
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null); // store id pending delete
   const openTasks    = allTasks.filter((t) => t.state !== "Done");
@@ -3508,38 +3526,34 @@ function LeftNav({ stores = [], allTasks = [], allFlags = [], allBlockers = [], 
         )}
         {filtered.map((s) => (
           <li key={s.id}
-            className={cx("nav-item nav-store nav-store-full", s.id === activeStoreId && navView==="store" && "is-active")}
-            onClick={() => { onSelectStore(s); onNavSelect("store"); }}>
-            <Dot tone={s.health || "neutral"} />
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span className="mono nav-store-id">{s.id}</span>
-                <span className="nav-store-phase mono" style={{fontSize:10,color:"var(--muted-fg)",background:"var(--panel)",padding:"0 4px",borderRadius:2,border:"1px solid var(--border)"}}>{s.phase}</span>
-              </div>
-              <div className="nav-store-name" style={{fontSize:"var(--t12)",color:"var(--fg-2)",marginTop:1}}>{s.name || s.retailer}</div>
-            </div>
+            className={cx("nav-item nav-store", s.id===activeStoreId && navView==="store" && "is-active")}
+            onClick={() => onSelectStore(s)}
+            style={{gap:6}}>
+            <Dot tone={s.health||"neutral"} />
+            <span className="mono nav-store-id" style={{flex:1,fontSize:"var(--t12)"}}>{s.id}</span>
             <button className="nav-store-delete iconbtn xs"
               title="Delete store"
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(s.id); }}
-              style={{opacity:0,transition:"opacity .15s",color:"var(--bad)",flexShrink:0}}>
-              ×
-            </button>
+              style={{opacity:0,transition:"opacity .15s",color:"var(--bad)",flexShrink:0}}>×</button>
           </li>
         ))}
       </ul>
 
-      <div style={{padding:"8px 10px",borderTop:"1px solid var(--border)"}}>
-        <button className="btn ghost" style={{width:"100%",justifyContent:"center"}} onClick={onAddStore}>
-          <Icon.plus /> Add store
+      <div style={{padding:"6px 8px",borderTop:"1px solid var(--border)",display:"flex",gap:4}}>
+        <button className="btn ghost sm" style={{flex:1,justifyContent:"center"}} onClick={onAddStore}>
+          <Icon.plus /> Add
+        </button>
+        <button className="btn ghost sm" style={{flex:1,justifyContent:"center"}} onClick={onImportCSV}>
+          <Icon.arrowU /> CSV
         </button>
       </div>
 
-      <div className="leftnav-foot">
+      <div className="leftnav-foot" style={{cursor:"pointer"}} onClick={onChangeUser} title="Click to switch active user">
         <div className="me">
-          <span className="avatar mono">PS</span>
+          <span className="avatar mono">{(activeUser||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
           <div className="me-text">
-            <div>Priya Shah</div>
-            <div className="me-sub">Implementation · Acme</div>
+            <div style={{fontWeight:500}}>{activeUser || "Select user"}</div>
+            <div className="me-sub">Click to switch ↕</div>
           </div>
         </div>
       </div>
@@ -3915,6 +3929,214 @@ function TeamModal({ open, onClose, team, onSave }) {
 }
 
 // ============================================================
+// CSV IMPORT MODAL
+// ============================================================
+function ImportCSVModal({ open, onClose, existingStores, onImport }) {
+  const [preview, setPreview]   = useState(null); // parsed rows
+  const [errors,  setErrors]    = useState([]);
+  const [step,    setStep]      = useState("upload"); // upload | preview | done
+  const fileRef = useRef();
+
+  useEffect(() => { if (open) { setPreview(null); setErrors([]); setStep("upload"); } }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key==="Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const downloadTemplate = () => {
+    const cols = ["id","retailer","store_num","name","address","region","phase","health","owner_person","go_live","sqft","risk"];
+    const example = ["WFM-1248","Whole Foods Market","1248","Boston — Back Bay","123 Newbury St Boston MA 02116","Northeast","Planning","green","Jordan Reyes","Aug 1 2026","42000","low"];
+    const csv = [cols.join(","), example.join(",")].join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv," + encodeURIComponent(csv);
+    a.download = "storeops_import_template.csv";
+    a.click();
+  };
+
+  const parseCSV = (text) => {
+    const lines = text.trim().split("\n").filter(Boolean);
+    if (lines.length < 2) return { rows: [], errs: ["File must have a header row and at least one data row."] };
+    const headers = lines[0].split(",").map(s => s.trim().toLowerCase().replace(/\s+/g,"_"));
+    const get = (row, ...keys) => { for (const k of keys) { const i = headers.indexOf(k); if (i >= 0 && row[i]?.trim()) return row[i].trim(); } return ""; };
+    const rows = []; const errs = [];
+    const existingIds = new Set(existingStores.map(s => s.id));
+    for (let i = 1; i < lines.length; i++) {
+      // handle quoted CSV fields
+      const row = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g)?.map(v => v.replace(/^"|"$/g,"").trim()) || lines[i].split(",");
+      const id  = (get(row,"id","store_id") || "").toUpperCase();
+      if (!id) { errs.push(`Row ${i+1}: missing ID — skipped`); continue; }
+      const retailer = get(row,"retailer","retailer_name");
+      if (!retailer) { errs.push(`Row ${i+1} (${id}): missing retailer — skipped`); continue; }
+      // Duplicate check: same id AND same retailer = duplicate
+      const isDup = existingStores.some(s => s.id === id && s.retailer.toLowerCase() === retailer.toLowerCase());
+      if (isDup) { errs.push(`Row ${i+1} (${id}): duplicate — skipped`); continue; }
+      rows.push({
+        id, retailer, retailerCode: id.split("-")[0],
+        storeNum: get(row,"store_num","store_number","num"),
+        name: get(row,"name","store_name"),
+        address: get(row,"address"),
+        region: get(row,"region"),
+        phase: get(row,"phase") || "Planning",
+        health: get(row,"health") || "green",
+        owner: "Implementation", ownerPerson: get(row,"owner_person","owner"),
+        scheduledLive: get(row,"go_live","go-live","golive","scheduled_live"),
+        sqft: get(row,"sqft","square_feet"),
+        risk: get(row,"risk") || "low",
+        openedOn: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),
+        dueDelta:"", due:"", nextAction:"", fixtureCount:0, skus:0,
+      });
+    }
+    return { rows, errs };
+  };
+
+  const handleFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const { rows, errs } = parseCSV(e.target.result);
+      setPreview(rows); setErrors(errs);
+      setStep("preview");
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <div className="ai-modal store-edit-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><Icon.arrowU /><span>Import stores from CSV</span></div>
+          <div className="grow" />
+          <button className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+
+        {step === "upload" && (
+          <div className="flag-body" style={{alignItems:"flex-start",gap:16}}>
+            <div style={{fontSize:"var(--t13)",color:"var(--fg-2)",lineHeight:1.6}}>
+              Upload a CSV file to create multiple stores at once. Stores with the same ID <em>and</em> retailer will be skipped. Different retailers can share a store number.
+            </div>
+            <button className="btn ghost" onClick={downloadTemplate}><Icon.paper /> Download CSV template</button>
+            <div className="csv-drop-zone"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
+              onClick={() => fileRef.current?.click()}>
+              <Icon.arrowU />
+              <span>Drop CSV file here or click to browse</span>
+              <input ref={fileRef} type="file" accept=".csv,text/csv" style={{display:"none"}}
+                onChange={(e) => handleFile(e.target.files[0])} />
+            </div>
+          </div>
+        )}
+
+        {step === "preview" && (
+          <div className="flag-body" style={{padding:0,maxHeight:"60vh",overflowY:"auto"}}>
+            {errors.length > 0 && (
+              <div style={{padding:"10px 20px",background:"var(--warn-soft)",borderBottom:"1px solid var(--border)"}}>
+                <div style={{fontWeight:600,fontSize:"var(--t12)",color:"var(--warn)",marginBottom:4}}>⚠ {errors.length} row(s) skipped</div>
+                {errors.map((e,i) => <div key={i} style={{fontSize:"var(--t12)",color:"var(--fg-2)"}}>{e}</div>)}
+              </div>
+            )}
+            {preview.length === 0 ? (
+              <div style={{padding:"20px",textAlign:"center",color:"var(--muted-fg)"}}>No new stores to import (all were duplicates or had errors).</div>
+            ) : (
+              <table className="ftbl" style={{margin:0,border:0,borderRadius:0}}>
+                <thead><tr>
+                  <th>ID</th><th>Retailer</th><th>Name</th><th>Phase</th><th>Region</th><th>Go-live</th>
+                </tr></thead>
+                <tbody>
+                  {preview.map((s) => (
+                    <tr key={s.id}>
+                      <td className="mono">{s.id}</td>
+                      <td>{s.retailer}</td>
+                      <td>{s.name || "—"}</td>
+                      <td>{s.phase}</td>
+                      <td>{s.region || "—"}</td>
+                      <td className="mono">{s.scheduledLive || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        <div className="flag-foot">
+          {step === "preview" && (
+            <button className="btn ghost sm" onClick={() => setStep("upload")}><Icon.chevR style={{transform:"rotate(180deg)"}} /> Back</button>
+          )}
+          <div className="grow" />
+          <button className="btn ghost" onClick={onClose}>Cancel</button>
+          {step === "preview" && preview.length > 0 && (
+            <button className="btn primary" onClick={() => { onImport(preview); }}>
+              <Icon.check /> Import {preview.length} store{preview.length !== 1 ? "s" : ""}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// USER PICKER MODAL
+// ============================================================
+function UserPickerModal({ open, onClose, team, activeUser, onSelect }) {
+  const [custom, setCustom] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => { if (e.key==="Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
+  if (!open) return null;
+
+  // Combine team members with TEAM defaults
+  const allUsers = [...new Set([...TEAM.map(m=>m.name), ...team.map(m=>m.name)])];
+
+  return (
+    <div className="ai-modal-scrim" onMouseDown={onClose}>
+      <div className="ai-modal" style={{width:"min(360px,90vw)"}} onMouseDown={(e) => e.stopPropagation()}>
+        <header className="ai-modal-head">
+          <div className="ai-modal-title"><span>Switch active user</span></div>
+          <div className="grow" />
+          <button className="iconbtn" onClick={onClose}><Icon.close /></button>
+        </header>
+        <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginBottom:4}}>
+            All notes, tasks, and actions will be attributed to the selected user.
+          </div>
+          {allUsers.map((name) => (
+            <button key={name}
+              className={cx("btn", activeUser===name ? "primary" : "ghost")}
+              style={{justifyContent:"flex-start",gap:10}}
+              onClick={() => onSelect(name)}>
+              <span className="avatar avatar-xs mono">{name.split(" ").map(w=>w[0]).join("").slice(0,2)}</span>
+              {name}
+              {activeUser===name && <span style={{marginLeft:"auto",fontSize:"var(--t12)"}}>✓ active</span>}
+            </button>
+          ))}
+          <div style={{borderTop:"1px solid var(--border)",paddingTop:8,marginTop:4}}>
+            <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginBottom:6}}>Or enter a custom name:</div>
+            <div style={{display:"flex",gap:6}}>
+              <input className="new-task-title" style={{flex:1}} placeholder="Custom name…"
+                value={custom} onChange={(e) => setCustom(e.target.value)}
+                onKeyDown={(e) => { if (e.key==="Enter" && custom.trim()) onSelect(custom.trim()); }} />
+              <button className="btn primary" disabled={!custom.trim()} onClick={() => onSelect(custom.trim())}>
+                <Icon.check />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ============================================================
 // APP
 // ============================================================
 function App() {
@@ -3942,11 +4164,12 @@ function App() {
   const [editStoreOpen,  setEditStoreOpen]  = useState(false);
   const [addStoreOpen,   setAddStoreOpen]   = useState(false);
   const [teamOpen,       setTeamOpen]       = useState(false);
+  const [importOpen,     setImportOpen]     = useState(false);
   const [activeStoreId,  setActiveStoreId]  = useState(STORE.id);
-  const [navW,           setNavW]           = useState(232);
-  const [railW,          setRailW]          = useState(320);
+  const [activeUser,     setActiveUser]     = useState("Priya Shah");
+  const [userPickerOpen, setUserPickerOpen] = useState(false);
   const composerRef = useRef();
-  const appRef      = useRef();
+  const activeStoreIdRef = useRef(STORE.id);
 
   // ── Load from Supabase ────────────────────────────────────
   useEffect(() => {
@@ -3977,6 +4200,9 @@ function App() {
     setTimeout(() => setToast(null), 3200);
   };
 
+  const activeUserRef = useRef("Priya Shah");
+  useEffect(() => { activeUserRef.current = activeUser; }, [activeUser]);
+
   const nowStamp = () => {
     const now = new Date();
     return `${now.toLocaleString("en-US",{month:"short",day:"numeric"})} · ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
@@ -3994,12 +4220,13 @@ function App() {
   // ── Post note ────────────────────────────────────────────
   const postNote = async (n) => {
     const t = nowStamp();
-    setEntries((es) => [{ ...n, t }, ...es]);
+    const noteWithUser = { ...n, who: n.who || activeUserRef.current, t };
+    setEntries((es) => [noteWithUser, ...es]);
     flashToast(n.action ? `Note posted · assigned to ${n.team}` : "Note posted");
     if (!SB.configured()) return;
     try {
       await SB.insertEntry({
-        store_id: STORE.id, t, who: n.who || "Priya Shah",
+        store_id: activeStoreIdRef.current, t, who: noteWithUser.who,
         team: n.team, kind: n.kind || "note", sev: n.sev,
         title: n.title, body: n.body, action: n.action || false,
         due: n.due, mentions: n.mentions, attachment: n.attachment,
@@ -4015,7 +4242,7 @@ function App() {
     flashToast("Task created");
     if (!SB.configured()) return;
     try {
-      await SB.insertTask({ id, store_id:STORE.id, title:taskData.title,
+      await SB.insertTask({ id, store_id:activeStoreIdRef.current, title:taskData.title,
         state:"Open", owner:taskData.owner||"", due:taskData.due||"—", flag:taskData.flag||null });
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
@@ -4034,7 +4261,7 @@ function App() {
   const submitFlag = async ({ label, tone, team, reason }) => {
     const t = nowStamp();
     setLiveFlags((fs) => [{ label, tone, team, since:"just now" }, ...fs]);
-    setEntries((es) => [{ kind:"note", who:"Priya Shah", team, sev:tone,
+    setEntries((es) => [{ kind:"note", who:activeUserRef.current, team, sev:tone,
       title:`Flag raised: ${label}`, body:reason||"—",
       action:true, due:"—", mentions:[`@${team.toLowerCase().replace(/ /g,"")}`], t }, ...es]);
     setFlagOpen(false);
@@ -4042,8 +4269,8 @@ function App() {
     if (!SB.configured()) return;
     try {
       await Promise.all([
-        SB.insertFlag({ store_id:STORE.id, label, tone, team, since:"just now" }),
-        SB.insertEntry({ store_id:STORE.id, t, who:"Priya Shah", team, kind:"note", sev:tone,
+        SB.insertFlag({ store_id:activeStoreIdRef.current, label, tone, team, since:"just now" }),
+        SB.insertEntry({ store_id:activeStoreIdRef.current, t, who:activeUserRef.current, team, kind:"note", sev:tone,
           title:`Flag raised: ${label}`, body:reason||"—",
           action:true, due:"—", mentions:[`@${team.toLowerCase().replace(/ /g,"")}`] }),
       ]);
@@ -4065,7 +4292,7 @@ function App() {
     flashToast("Blocker added");
     if (!SB.configured()) return;
     try {
-      const row = await SB.insertBlocker({ store_id:STORE.id, ...data });
+      const row = await SB.insertBlocker({ store_id:activeStoreIdRef.current, ...data });
       if (row?.id) setBlockers((bs) => bs.map((b) => b.id === optimistic.id ? dbRowToBlocker(row) : b));
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
@@ -4150,14 +4377,14 @@ function App() {
     flashToast(`${PHASE_DETAIL[phase].subtasks[i].label} → ${!prevDone ? "done" : "open"}`);
   };
   const postPhaseNote = (phase, text) => postNote({
-    kind:"note", who:"Priya Shah", team:PHASE_DETAIL[phase].owner, sev:"info",
+    kind:"note", who:activeUserRef.current, team:PHASE_DETAIL[phase].owner, sev:"info",
     title:`[${phase}] ${text.split("\n")[0].slice(0,80)}`, body:text, action:false,
   });
   const createPhaseTask = async (phase, { title, team, due }) => {
     const id = `T-${Date.now()}`;
     setPhaseTasks((pt) => ({...pt, [phase]: [...(pt[phase]||[]), {id,title,team,due,state:"Open"}]}));
     const t = nowStamp();
-    const entry = { kind:"task", who:"Priya Shah", team, sev:"info",
+    const entry = { kind:"task", who:activeUserRef.current, team, sev:"info",
       title:`[${phase}] Task created: ${title}`,
       body:`Assigned to ${team} · due ${due}`, action:true, due, t };
     setEntries((es) => [entry, ...es]);
@@ -4165,8 +4392,8 @@ function App() {
     if (!SB.configured()) return;
     try {
       await Promise.all([
-        SB.insertTask({ id, store_id:STORE.id, title, state:"Open", owner:team, due:due||"—" }),
-        SB.insertEntry({ store_id:STORE.id, ...entry }),
+        SB.insertTask({ id, store_id:activeStoreIdRef.current, title, state:"Open", owner:team, due:due||"—" }),
+        SB.insertEntry({ store_id:activeStoreIdRef.current, ...entry }),
       ]);
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
@@ -4174,9 +4401,11 @@ function App() {
   // ── Select store ─────────────────────────────────────────
   const selectStore = (s) => {
     setActiveStoreId(s.id);
+    activeStoreIdRef.current = s.id;
     setStoreData(s);
     setNavView("store");
     setTab("overview");
+    setEntries([]); setLiveTasks([]); setLiveFlags([]); setLiveFiles([]); setBlockers([]);
     // reload data for this store
     if (!SB.configured()) return;
     setLoading(true);
@@ -4211,27 +4440,6 @@ function App() {
     try { await SB.deleteStore(storeId); } catch (e) { flashToast("Delete failed: " + e.message, true); }
   };
 
-  // ── Drag-to-resize nav panel ──────────────────────────────
-  const startNavResize = (e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = navW;
-    const onMove = (ev) => { setNavW(Math.max(160, Math.min(420, startW + ev.clientX - startX))); };
-    const onUp   = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup",   onUp);
-  };
-
-  // ── Drag-to-resize rail panel ─────────────────────────────
-  const startRailResize = (e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = railW;
-    const onMove = (ev) => { setRailW(Math.max(220, Math.min(520, startW - ev.clientX + startX))); };
-    const onUp   = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup",   onUp);
-  };
 
   // ── Edit note ─────────────────────────────────────────────
   const editNote = async (entry, updates) => {
@@ -4281,23 +4489,22 @@ function App() {
   const isStoreView = navView === "store";
 
   return (
-    <div className="app" ref={appRef} style={{"--nav-w": navW+"px", "--rail-w": railW+"px"}}>
-      {/* Left nav + resize handle */}
-      <div style={{display:"flex",position:"relative",width:"var(--nav-w)",flexShrink:0}}>
-        <LeftNav
-          stores={allStores}
-          allTasks={liveTasks}
-          allFlags={liveFlags}
-          allBlockers={blockers}
-          onAddStore={() => setAddStoreOpen(true)}
-          onNavSelect={setNavView}
-          navView={navView}
-          activeStoreId={activeStoreId}
-          onSelectStore={selectStore}
-          onDeleteStore={deleteStore}
-        />
-        <div className="resize-handle resize-handle-right" onMouseDown={startNavResize} title="Drag to resize" />
-      </div>
+    <div className="app">
+      <LeftNav
+        stores={allStores}
+        allTasks={liveTasks}
+        allFlags={liveFlags}
+        allBlockers={blockers}
+        onAddStore={() => setAddStoreOpen(true)}
+        onImportCSV={() => setImportOpen(true)}
+        onNavSelect={setNavView}
+        navView={navView}
+        activeStoreId={activeStoreId}
+        onSelectStore={selectStore}
+        onDeleteStore={deleteStore}
+        activeUser={activeUser}
+        onChangeUser={() => setUserPickerOpen(true)}
+      />
 
       <main className="main">
         {isStoreView && (
@@ -4326,7 +4533,7 @@ function App() {
             {/* Store tabs */}
             {isStoreView && tab === "overview"  && <Overview store={storeData} onSaveStore={saveStore} flags={liveFlags} tasks={liveTasks} />}
             {isStoreView && tab === "timeline"  && <Timeline entries={entries} onEdit={editNote} onDelete={deleteNote} />}
-            {isStoreView && tab === "notes"     && <Notes notes={entries.filter((e) => e.kind==="note")} composerRef={composerRef} onPost={postNote} onEdit={editNote} onDelete={deleteNote} />}
+            {isStoreView && tab === "notes"     && <Notes notes={entries.filter((e) => e.kind==="note")} composerRef={composerRef} onPost={postNote} onEdit={editNote} onDelete={deleteNote} activeUser={activeUser} />}
             {isStoreView && tab === "tasks"     && (
               <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState}
                 blockers={blockers} onAddBlocker={addBlocker} onResolveBlocker={resolveBlocker}
@@ -4337,10 +4544,7 @@ function App() {
             {isStoreView && tab === "audit"     && <Audit />}
           </div>
           {tweaks.showRail && isStoreView && (
-            <div style={{display:"flex",position:"relative",width:"var(--rail-w)",flexShrink:0}}>
-              <div className="resize-handle resize-handle-left" onMouseDown={startRailResize} title="Drag to resize" />
-              <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} />
-            </div>
+            <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} tasks={liveTasks} blockers={blockers} onTaskClick={null} />
           )}
         </div>
       </main>
@@ -4350,6 +4554,8 @@ function App() {
       </button>
 
       <AIModal open={aiOpen} onClose={() => setAiOpen(false)} />
+      <ImportCSVModal open={importOpen} onClose={() => setImportOpen(false)} existingStores={allStores} onImport={(stores) => { stores.forEach(addStore); setImportOpen(false); flashToast(`${stores.length} store(s) imported`); }} />
+      <UserPickerModal open={userPickerOpen} onClose={() => setUserPickerOpen(false)} team={liveTeam} activeUser={activeUser} onSelect={(u) => { setActiveUser(u); setUserPickerOpen(false); flashToast(`Active user: ${u}`); }} />
       <FlagModal open={flagOpen} onClose={() => setFlagOpen(false)} onSubmit={submitFlag} />
       <StoreEditModal store={storeData} open={editStoreOpen} onClose={() => setEditStoreOpen(false)} onSave={saveStore} />
       <AddStoreModal open={addStoreOpen} onClose={() => setAddStoreOpen(false)} onAdd={addStore} />

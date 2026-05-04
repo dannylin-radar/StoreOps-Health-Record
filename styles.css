@@ -937,3 +937,55 @@ button:focus-visible { outline-offset: 1px; }
   .content { grid-template-columns: 1fr; }
 }
 
+
+/* CONFIG BANNER */
+.config-banner {
+  background: var(--warn-soft); color: oklch(0.38 0.1 75);
+  border-bottom: 1px solid color-mix(in oklab, var(--warn) 30%, var(--border));
+  padding: 7px var(--pad-4); font-size: var(--t12);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.config-banner code { font-family: var(--font-mono); font-size: 91%; background: color-mix(in oklab, var(--warn) 15%, transparent); padding: 1px 5px; border-radius: 3px; }
+.config-banner-error { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in oklab, var(--bad) 30%, var(--border)); }
+[data-theme="dark"] .config-banner { color: oklch(0.82 0.14 75); }
+
+/* LOADING BAR */
+.loading-bar {
+  height: 2px; background: var(--accent);
+  animation: loadbar 1.2s ease-in-out infinite;
+  position: sticky; top: 0; z-index: 10; border-radius: 1px;
+}
+@keyframes loadbar { 0% { width: 0; opacity: 1; } 70% { width: 90%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
+
+/* NEW TASK FORM */
+.new-task-form {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px; border: 1px solid var(--border-2); border-radius: var(--radius);
+  background: var(--bg-elev); margin-bottom: 4px;
+}
+.new-task-title {
+  flex: 2; min-width: 180px;
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 28px; padding: 0 10px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+}
+.new-task-title:focus { border-color: var(--accent); }
+.new-task-field {
+  flex: 1; min-width: 100px;
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 28px; padding: 0 10px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+}
+.new-task-field:focus { border-color: var(--accent); }
+
+/* TASK CARD STATE CONTROLS */
+.task-card-actions {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  padding-top: 6px; border-top: 1px dashed var(--border);
+  margin-top: 2px;
+}
+.task-card-actions .btn { font-size: 10.5px; height: 20px; padding: 0 7px; }
+
+/* TOAST ERROR */
+.toast-error { background: var(--bad); }
+.toast-error svg { color: white; }

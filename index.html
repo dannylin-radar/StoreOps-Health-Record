@@ -1292,6 +1292,30 @@ html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 .pill-bad  { background: var(--bad-soft);  color: var(--bad);  border-color: color-mix(in oklab, var(--bad)  30%, var(--border)); }
 .pill-watch{ background: var(--warn-soft); color: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, var(--border)); }
 .pill-neutral { background: var(--panel); color: var(--muted-fg); border-color: var(--border); }
+
+/* DATE PICKER */
+.date-picker-wrap { cursor: pointer; }
+.date-picker-wrap:hover .due-inline { color: var(--accent) !important; }
+.date-picker-input::-webkit-calendar-picker-indicator { opacity: 0; }
+
+/* DATE PICKER */
+.date-picker-input {
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  height: 28px; padding: 0 8px; font: inherit; font-size: var(--t13);
+  color: var(--fg); background: var(--bg); outline: none;
+  cursor: pointer; min-width: 120px;
+}
+.date-picker-input:focus { border-color: var(--accent); }
+.date-picker-input.due-inline { height: 24px; font-size: var(--t12); min-width: 100px; }
+.date-picker-input.new-task-field { flex:1; min-width:100px; }
+/* Chrome: make the calendar icon use accent color */
+.date-picker-input::-webkit-calendar-picker-indicator {
+  cursor: pointer; opacity: 0.6;
+  filter: invert(0);
+}
+[data-theme="dark"] .date-picker-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
 </style>
 <script>
   window.__STOREOPS_CONFIG__ = {
@@ -1899,6 +1923,53 @@ const AI_SUGGESTIONS = [
 { q: "What's the install risk?", icon: "risk" }];
 
 
+
+// ============================================================
+// DATE PICKER — calendar input wrapper
+// ============================================================
+function DatePicker({ value, onChange, placeholder = "Pick a date", className = "" }) {
+  const inputRef = useRef();
+
+  // Convert display string (e.g. "May 7") to YYYY-MM-DD for input
+  const toInputVal = (v) => {
+    if (!v) return "";
+    try {
+      const d = new Date(v + ", " + new Date().getFullYear());
+      if (!isNaN(d)) return d.toISOString().slice(0, 10);
+    } catch {}
+    try {
+      const d = new Date(v);
+      if (!isNaN(d)) return d.toISOString().slice(0, 10);
+    } catch {}
+    return "";
+  };
+
+  // Convert YYYY-MM-DD back to a readable label
+  const fromInputVal = (v) => {
+    if (!v) return "";
+    const d = new Date(v + "T12:00:00");
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  return (
+    <div style={{position:"relative",display:"inline-flex",alignItems:"center"}}>
+      <input
+        ref={inputRef}
+        type="date"
+        className={cx("date-picker-input", className)}
+        value={toInputVal(value)}
+        onChange={(e) => onChange(fromInputVal(e.target.value))}
+        title={placeholder}
+      />
+      {!value && (
+        <span className="date-picker-placeholder" onClick={() => inputRef.current?.showPicker?.()}>
+          {placeholder}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ============================================================
 // PRIMITIVES
 // ============================================================
@@ -2133,7 +2204,7 @@ function PhaseDrawer({ phase, onClose, onPostNote, onCreateTask, onToggleSub, su
                     {TEAMS.map(t => <option key={t.id}>{t.id}</option>)}
                   </select>
                   <span className="comp-label">due</span>
-                  <input className="due-inline mono" placeholder="May 6" value={taskDue} onChange={e=>setTaskDue(e.target.value)}/>
+                  <DatePicker value={taskDue} onChange={setTaskDue} placeholder="Due date" />
                   <div className="grow"/>
                   <button className="btn primary" disabled={!taskTitle.trim()}><Icon.plus/> Create task</button>
                 </div>
@@ -2161,6 +2232,10 @@ function PhaseDrawer({ phase, onClose, onPostNote, onCreateTask, onToggleSub, su
   );
 }
 
+
+// ============================================================
+// DATE PICKER — native calendar, formatted display
+// ============================================================
 // ============================================================
 // TABS
 // ============================================================
@@ -2289,10 +2364,12 @@ function Overview({ store = STORE, onSaveStore }) {
               </select>
             ) : type === "date" ? (
               <input className="snap-edit-input" type="date" autoFocus
-                value={editVal ? new Date(editVal).toISOString().slice(0,10) : ""}
+                value={editVal ? (() => { try { const d = new Date(editVal+"T12:00:00"); return isNaN(d)?"":(d.toISOString().slice(0,10)); } catch{return "";} })() : ""}
                 onChange={(e) => {
-                  const d = e.target.value ? new Date(e.target.value).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
-                  setEditVal(d); saveField(field, d);
+                  if (!e.target.value) return;
+                  const d = new Date(e.target.value + "T12:00:00");
+                  const str = d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+                  setEditVal(str); saveField(field, str);
                 }} />
             ) : multiLine ? (
               <textarea className="snap-edit-input" rows={2} autoFocus value={editVal}
@@ -2413,24 +2490,47 @@ function BlockerRow({ num, title, who, age, tone }) {
 // ============================================================
 function Timeline({ entries, onEdit, onDelete }) {
   const [filter, setFilter] = useState("all");
-  const filters = [
-  { id: "all", label: "All", n: entries.length },
-  { id: "note", label: "Notes", n: entries.filter((e) => e.kind === "note").length },
-  { id: "task", label: "Tasks", n: entries.filter((e) => e.kind === "task").length },
-  { id: "comm", label: "Comms", n: entries.filter((e) => e.kind === "comm").length },
-  { id: "status", label: "Status", n: entries.filter((e) => e.kind === "status").length }];
+  const [teamFilter, setTeamFilter] = useState("all");
+  const [actionOnly, setActionOnly] = useState(false);
 
-  const list = filter === "all" ? entries : entries.filter((e) => e.kind === filter);
+  // All teams that appear in entries
+  const teams = ["all", ...new Set(entries.map(e => e.team).filter(Boolean).filter(t => t !== "—"))];
+
+  const filters = [
+    { id: "all",    label: "All",    n: entries.length },
+    { id: "note",   label: "Notes",  n: entries.filter((e) => e.kind === "note").length },
+    { id: "task",   label: "Tasks",  n: entries.filter((e) => e.kind === "task").length },
+    { id: "comm",   label: "Comms",  n: entries.filter((e) => e.kind === "comm").length },
+    { id: "status", label: "Status", n: entries.filter((e) => e.kind === "status").length },
+  ];
+
+  const list = entries
+    .filter((e) => filter === "all" || e.kind === filter)
+    .filter((e) => teamFilter === "all" || e.team === teamFilter)
+    .filter((e) => !actionOnly || e.action);
+
   return (
     <div className="timeline-wrap">
       <div className="timeline-filter">
         {filters.map((f) =>
-        <button key={f.id} className={cx("chip", filter === f.id && "is-on")} onClick={() => setFilter(f.id)}>
+          <button key={f.id} className={cx("chip", filter === f.id && "is-on")} onClick={() => setFilter(f.id)}>
             {f.label} <span className="mono chip-n">{f.n}</span>
           </button>
         )}
         <div className="grow" />
-        <span className="muted-tx mono">Sorted: newest first</span>
+        {/* Team filter */}
+        {teams.length > 1 && (
+          <select className="select-ish mono" style={{height:26,fontSize:"var(--t12)"}}
+            value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)}>
+            {teams.map(t => <option key={t} value={t}>{t === "all" ? "All teams" : t}</option>)}
+          </select>
+        )}
+        {/* Action required filter */}
+        <label style={{display:"flex",alignItems:"center",gap:5,fontSize:"var(--t12)",color:"var(--fg-2)",cursor:"pointer",whiteSpace:"nowrap"}}>
+          <input type="checkbox" checked={actionOnly} onChange={e => setActionOnly(e.target.checked)} />
+          Actions only
+        </label>
+        <span className="muted-tx mono">newest first</span>
       </div>
       <ol className="timeline">
         {list.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
@@ -2877,9 +2977,10 @@ function Notes({ notes, composerRef, onPost, onEdit, onDelete, activeUser }) {
 
   const post = () => {
     const t = title.trim() || body.trim().split("\n")[0].slice(0, 80) || "(untitled note)";
+    if (!body.trim() && !title.trim()) return;
     onPost({
       kind: "note",
-      who: activeUserRef.current,
+      who: activeUser,          // use the prop, not the App-level ref
       team,
       sev,
       title: t,
@@ -2888,12 +2989,17 @@ function Notes({ notes, composerRef, onPost, onEdit, onDelete, activeUser }) {
       due: action ? due || "—" : undefined,
       mentions: action ? [`@${team.toLowerCase().replace(/ /g, "")}`] : undefined
     });
-    setTitle("");setBody("");setSev("info");setAction(false);setDue("");
+    setTitle(""); setBody(""); setSev("info"); setAction(false); setDue("");
   };
 
   const onKeyDown = (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {e.preventDefault();post();}
   };
+
+  // Team filter for action items
+  const [teamFilter, setTeamFilter] = useState("all");
+  const actionTeams = ["all", ...new Set(notes.filter(n=>n.action && n.team).map(n=>n.team))];
+  const filteredNotes = teamFilter === "all" ? notes : notes.filter(n => !n.action || n.team === teamFilter);
 
   return (
     <div className="notes">
@@ -2934,7 +3040,7 @@ function Notes({ notes, composerRef, onPost, onEdit, onDelete, activeUser }) {
                 {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
               </select>
               <span className="comp-label">due</span>
-              <input className="due-inline mono" placeholder="May 6" value={due} onChange={(e) => setDue(e.target.value)} />
+              <DatePicker value={due} onChange={setDue} placeholder="Pick date" />
             </>
           }
           <div className="grow" />
@@ -2944,8 +3050,21 @@ function Notes({ notes, composerRef, onPost, onEdit, onDelete, activeUser }) {
           </button>
         </div>
       </div>
+      {actionTeams.length > 1 && (
+        <div style={{display:"flex",gap:6,padding:"8px 0",flexWrap:"wrap",alignItems:"center"}}>
+          <span style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>Filter by assigned team:</span>
+          {actionTeams.map((t) => (
+            <button key={t} className={cx("chip", teamFilter===t && "is-on")} onClick={() => setTeamFilter(t)}>
+              {t === "all" ? "All notes" : t}
+              {t !== "all" && <span className="mono" style={{marginLeft:4,fontSize:10}}>
+                {notes.filter(n=>n.action && n.team===t).length}
+              </span>}
+            </button>
+          ))}
+        </div>
+      )}
       <ol className="timeline">
-        {notes.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
+        {filteredNotes.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
       </ol>
     </div>);
 
@@ -3495,7 +3614,7 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
           <form className="new-task-form" onSubmit={submit}>
             <input className="new-task-title" placeholder="New task title…" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             <input className="new-task-field" placeholder="Owner" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} />
-            <input className="new-task-field mono" placeholder="Due date" value={newDue} onChange={(e) => setNewDue(e.target.value)} />
+            <DatePicker value={newDue} onChange={setNewDue} placeholder="Due date" />
             <label style={{display:"flex",alignItems:"center",gap:5,fontSize:"var(--t12)",color:"var(--fg-2)",cursor:"pointer",whiteSpace:"nowrap"}}>
               <input type="checkbox" checked={newFlag} onChange={(e) => setNewFlag(e.target.checked)} />
               Mark as blocker
@@ -4087,7 +4206,7 @@ function AddStoreModal({ open, onClose, onAdd }) {
             </select>
           </div>
           <label className="field"><span className="field-l">Owner person</span><input value={form.ownerPerson} onChange={(e) => set("ownerPerson",e.target.value)} /></label>
-          <label className="field"><span className="field-l">Go-live target</span><input className="mono" value={form.scheduledLive} onChange={(e) => set("scheduledLive",e.target.value)} placeholder="Jun 15, 2026" /></label>
+          <label className="field"><span className="field-l">Go-live target</span><DatePicker value={form.scheduledLive} onChange={(v) => set("scheduledLive", v)} placeholder="Pick go-live date" /></label>
         </div>
         <div className="flag-foot">
           <span className="muted-tx mono">* required</span>
@@ -4488,6 +4607,10 @@ function App() {
     setEntries((es) => [noteWithUser, ...es]);
     flashToast(n.action ? `Note posted · assigned to ${n.team}` : "Note posted");
     if (!SB.configured()) return;
+    if (!activeStoreIdRef.current) {
+      flashToast("Select a store before posting notes", true);
+      return;
+    }
     try {
       await SB.insertEntry({
         store_id: activeStoreIdRef.current, t, who: noteWithUser.who,

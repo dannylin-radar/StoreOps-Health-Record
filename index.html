@@ -1220,6 +1220,88 @@ button:focus-visible { outline-offset: 1px; }
 
 /* Remove resize handle styles */
 .resize-handle { display: none; }
+
+/* ── FULL SCREEN ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+#root { height: 100%; }
+.app { height: 100vh; width: 100vw; overflow: hidden; }
+
+/* ── RESIZE HANDLES ──────────────────────────────────────── */
+.resize-handle {
+  position: absolute; top: 0; bottom: 0; width: 4px; z-index: 10;
+  cursor: col-resize; background: transparent; transition: background .15s;
+}
+.resize-handle:hover, .resize-handle:active { background: var(--accent); }
+.resize-handle-right { right: 0; }
+.resize-handle-left  { left: 0; }
+
+/* ── WELCOME DASHBOARD ───────────────────────────────────── */
+.welcome-dash {
+  display: flex; flex-direction: column; gap: 20px;
+  padding: 32px 40px; height: 100%; overflow-y: auto;
+}
+.welcome-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.welcome-title { margin: 0 0 4px; font-size: 26px; font-weight: 600; color: var(--fg); }
+.welcome-sub   { margin: 0; font-size: var(--t14); color: var(--fg-2); }
+
+.welcome-stats {
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.welcome-stat {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; background: var(--bg-elev);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.welcome-stat-n { font-size: 22px; font-weight: 600; color: var(--fg); font-family: var(--font-mono); }
+.welcome-stat-l { font-size: var(--t12); color: var(--muted-fg); }
+
+.welcome-search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border-2); border-radius: var(--radius);
+  padding: 0 12px; background: var(--bg-elev); height: 36px;
+  max-width: 480px;
+}
+.welcome-search {
+  flex: 1; border: 0; background: transparent; font: inherit;
+  font-size: var(--t13); color: var(--fg); outline: none;
+}
+.welcome-search::placeholder { color: var(--muted-fg); }
+
+.welcome-table-wrap {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; flex: 1;
+}
+.welcome-table {
+  width: 100%; border-collapse: collapse; font-size: var(--t13);
+}
+.welcome-table thead tr {
+  background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.welcome-table th {
+  padding: 8px 12px; text-align: left; font-size: var(--t11);
+  font-weight: 600; color: var(--muted-fg); text-transform: uppercase; letter-spacing: .04em;
+}
+.welcome-row {
+  border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s;
+}
+.welcome-row:last-child { border-bottom: 0; }
+.welcome-row:hover { background: var(--hover); }
+.welcome-row td { padding: 10px 12px; color: var(--fg); }
+
+.welcome-empty {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; color: var(--muted-fg); text-align: center;
+  padding: 60px 20px;
+}
+
+/* pill variants for welcome table */
+.pill-ok   { background: var(--ok-soft);   color: var(--ok);   border-color: color-mix(in oklab, var(--ok)   30%, var(--border)); }
+.pill-bad  { background: var(--bad-soft);  color: var(--bad);  border-color: color-mix(in oklab, var(--bad)  30%, var(--border)); }
+.pill-watch{ background: var(--warn-soft); color: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, var(--border)); }
+.pill-neutral { background: var(--panel); color: var(--muted-fg); border-color: var(--border); }
 </style>
 <script>
   window.__STOREOPS_CONFIG__ = {
@@ -2098,35 +2180,34 @@ function PhaseDrawer({ phase, onClose, onPostNote, onCreateTask, onToggleSub, su
 // ============================================================
 // TABS
 // ============================================================
-const TABS = [
-{ id: "overview", label: "Overview", k: "1" },
-{ id: "timeline", label: "Timeline", k: "2", count: TIMELINE.length },
-{ id: "notes", label: "Notes", k: "3", count: 18 },
-{ id: "tasks", label: "Tasks", k: "4", count: TASKS.filter((t) => t.state !== "Done").length },
-{ id: "comms", label: "Comms", k: "5", count: 6 },
-{ id: "files", label: "Files", k: "6", count: FILES.length },
-{ id: "audit", label: "Audit", k: "7" }];
+const TAB_DEFS = [
+  { id:"overview", label:"Overview", k:"1" },
+  { id:"timeline", label:"Timeline", k:"2" },
+  { id:"notes",    label:"Notes",    k:"3" },
+  { id:"tasks",    label:"Tasks",    k:"4" },
+  { id:"comms",    label:"Comms",    k:"5" },
+  { id:"files",    label:"Files",    k:"6" },
+  { id:"audit",    label:"Audit",    k:"7" },
+];
 
-
-function TabBar({ active, onSelect }) {
+function TabBar({ active, onSelect, counts = {} }) {
   return (
     <div className="tabs">
-      {TABS.map((t) =>
-      <button key={t.id} className={cx("tab", active === t.id && "is-active")} onClick={() => onSelect(t.id)}>
+      {TAB_DEFS.map((t) =>
+        <button key={t.id} className={cx("tab", active===t.id && "is-active")} onClick={() => onSelect(t.id)}>
           {t.label}
-          {t.count != null && <span className="tab-count mono">{t.count}</span>}
-          <Kbd>{t.k}</Kbd>
+          {counts[t.id] != null && counts[t.id] > 0 && (
+            <span className="tab-count mono">{counts[t.id]}</span>
+          )}
         </button>
       )}
       <div className="tabs-spacer" />
-      <button className="btn ghost sm"><Icon.filter /> Filter</button>
       <div className="tabs-search">
         <Icon.search />
         <input placeholder="Search this store…" />
-        <Kbd>/</Kbd>
       </div>
-    </div>);
-
+    </div>
+  );
 }
 
 // ============================================================
@@ -3584,6 +3665,133 @@ function LeftNav({ stores=[], allTasks=[], allFlags=[], allBlockers=[], onAddSto
 }
 
 // ============================================================
+// WELCOME DASHBOARD — shown when no store is selected
+// ============================================================
+function WelcomeDashboard({ stores, onSelectStore, onAddStore, onImportCSV }) {
+  const [sortField, setSortField] = useState("id");
+  const [sortDir,   setSortDir]   = useState("asc");
+  const [filter,    setFilter]    = useState("");
+
+  const sorted = [...stores]
+    .filter((s) => {
+      const q = filter.toLowerCase();
+      return !q || s.id.toLowerCase().includes(q) || (s.retailer||"").toLowerCase().includes(q)
+        || (s.name||"").toLowerCase().includes(q) || (s.region||"").toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      const av = (a[sortField]||"").toString().toLowerCase();
+      const bv = (b[sortField]||"").toString().toLowerCase();
+      return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+
+  const toggleSort = (field) => {
+    if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const SortTh = ({ field, label }) => (
+    <th onClick={() => toggleSort(field)} style={{cursor:"pointer",userSelect:"none",whiteSpace:"nowrap"}}>
+      {label} {sortField===field ? (sortDir==="asc" ? "↑" : "↓") : ""}
+    </th>
+  );
+
+  const healthCounts = { green: stores.filter(s=>s.health==="green").length, yellow: stores.filter(s=>s.health==="yellow").length, red: stores.filter(s=>s.health==="red").length };
+
+  return (
+    <div className="welcome-dash">
+      {/* Header */}
+      <div className="welcome-head">
+        <div>
+          <h1 className="welcome-title">StoreOps</h1>
+          <p className="welcome-sub">Select a store to open its health record, or add a new one.</p>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button className="btn ghost" onClick={onImportCSV}><Icon.arrowU /> Import CSV</button>
+          <button className="btn primary" onClick={onAddStore}><Icon.plus /> Add store</button>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="welcome-stats">
+        <div className="welcome-stat">
+          <span className="welcome-stat-n">{stores.length}</span>
+          <span className="welcome-stat-l">Total stores</span>
+        </div>
+        <div className="welcome-stat">
+          <Dot tone="green" />
+          <span className="welcome-stat-n">{healthCounts.green}</span>
+          <span className="welcome-stat-l">Healthy</span>
+        </div>
+        <div className="welcome-stat">
+          <Dot tone="yellow" />
+          <span className="welcome-stat-n">{healthCounts.yellow}</span>
+          <span className="welcome-stat-l">Watch</span>
+        </div>
+        <div className="welcome-stat">
+          <Dot tone="red" />
+          <span className="welcome-stat-n">{healthCounts.red}</span>
+          <span className="welcome-stat-l">Blocked</span>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="welcome-search-wrap">
+        <Icon.search />
+        <input className="welcome-search" placeholder="Filter by ID, retailer, name, region…"
+          value={filter} onChange={(e) => setFilter(e.target.value)} autoFocus />
+        {filter && <button style={{border:0,background:"transparent",cursor:"pointer",color:"var(--muted-fg)"}} onClick={() => setFilter("")}>×</button>}
+      </div>
+
+      {/* Table */}
+      {sorted.length === 0 ? (
+        <div className="welcome-empty">
+          {stores.length === 0
+            ? <><p style={{fontSize:"var(--t16)",fontWeight:600,marginBottom:8}}>No stores yet</p><p style={{color:"var(--fg-2)"}}>Add a store or import a CSV to get started.</p></>
+            : <p>No stores match "{filter}"</p>
+          }
+        </div>
+      ) : (
+        <div className="welcome-table-wrap">
+          <table className="welcome-table">
+            <thead>
+              <tr>
+                <th style={{width:16}}></th>
+                <SortTh field="id"           label="Store ID" />
+                <SortTh field="retailer"     label="Retailer" />
+                <SortTh field="phase"        label="Phase" />
+                <SortTh field="ownerPerson"  label="Owner" />
+                <SortTh field="scheduledLive" label="Go-live" />
+                <SortTh field="region"       label="Region" />
+                <th>Health</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((s) => (
+                <tr key={s.id} className="welcome-row" onClick={() => onSelectStore(s)}>
+                  <td><Dot tone={s.health||"neutral"} /></td>
+                  <td className="mono" style={{fontWeight:500}}>{s.id}</td>
+                  <td>{s.retailer}</td>
+                  <td><span className="pill pill-neutral mono" style={{fontSize:10}}>{s.phase}</span></td>
+                  <td>{s.ownerPerson || s.owner || "—"}</td>
+                  <td className="mono">{s.scheduledLive || "—"}</td>
+                  <td>{s.region || "—"}</td>
+                  <td>
+                    <span className={cx("pill", s.health==="green"?"pill-ok":s.health==="red"?"pill-bad":"pill-watch")}>
+                      {s.health || "—"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ============================================================
 // GLOBAL TASKS VIEW — sortable list of all tasks
 // ============================================================
 function GlobalTasksView({ tasks, onStateChange, storeId, flashToast }) {
@@ -4149,14 +4357,14 @@ function App() {
   const [subState, setSubState]   = useState({});
   const [phaseTasks, setPhaseTasks] = useState({});
 
-  const [entries,    setEntries]    = useState(TIMELINE);
-  const [liveTasks,  setLiveTasks]  = useState(TASKS);
-  const [liveFlags,  setLiveFlags]  = useState(FLAGS);
-  const [liveFiles,  setLiveFiles]  = useState(FILES);
+  const [entries,    setEntries]    = useState([]);
+  const [liveTasks,  setLiveTasks]  = useState([]);
+  const [liveFlags,  setLiveFlags]  = useState([]);
+  const [liveFiles,  setLiveFiles]  = useState([]);
   const [liveTeam,   setLiveTeam]   = useState(TEAM);
   const [blockers,   setBlockers]   = useState([]);
-  const [storeData,  setStoreData]  = useState(STORE);
-  const [allStores,  setAllStores]  = useState([STORE]);
+  const [storeData,  setStoreData]  = useState(null);
+  const [allStores,  setAllStores]  = useState([]);
 
   const [loading,        setLoading]        = useState(false);
   const [dbError,        setDbError]        = useState(null);
@@ -4165,33 +4373,27 @@ function App() {
   const [addStoreOpen,   setAddStoreOpen]   = useState(false);
   const [teamOpen,       setTeamOpen]       = useState(false);
   const [importOpen,     setImportOpen]     = useState(false);
-  const [activeStoreId,  setActiveStoreId]  = useState(STORE.id);
+  const [navW,           setNavW]           = useState(220);
+  const [railW,          setRailW]          = useState(300);
+  const [activeStoreId,  setActiveStoreId]  = useState(null); // null = no store selected
   const [activeUser,     setActiveUser]     = useState("Priya Shah");
   const [userPickerOpen, setUserPickerOpen] = useState(false);
   const composerRef = useRef();
-  const activeStoreIdRef = useRef(STORE.id);
+  const activeStoreIdRef = useRef(null);
 
   // ── Load from Supabase ────────────────────────────────────
   useEffect(() => {
-    if (!SB.configured()) return;
+    if (!SB.configured()) {
+      // No Supabase: seed with mock data for demo
+      setAllStores([STORE]);
+      return;
+    }
     setLoading(true);
-    Promise.all([
-      SB.getEntries(STORE.id),
-      SB.getTasks(STORE.id),
-      SB.getFlags(STORE.id),
-      SB.getFiles(STORE.id),
-      SB.getTeam(STORE.id),
-      SB.listStores(),
-      SB.getBlockers(STORE.id),
-    ]).then(([dbEntries, dbTasks, dbFlags, dbFiles, dbTeam, dbStores, dbBlockers]) => {
-      if (dbEntries?.length)  setEntries(dbEntries.map(dbRowToEntry));
-      if (dbTasks?.length)    setLiveTasks(dbTasks.map(dbRowToTask));
-      if (dbFlags?.length)    setLiveFlags(dbFlags.map(dbRowToFlag));
-      if (dbFiles?.length)    setLiveFiles(dbFiles.map(dbRowToFile));
-      if (dbTeam?.length)     setLiveTeam(dbTeam.map((r) => ({ name:r.name, role:r.role, team:r.team, load:r.load, initials:r.initials, since:r.since })));
-      if (dbStores?.length)   setAllStores(dbStores.map(rowToStore));
-      if (dbBlockers?.length) setBlockers(dbBlockers.map(dbRowToBlocker));
-    }).catch((e) => setDbError(e.message))
+    SB.listStores()
+      .then((dbStores) => {
+        if (dbStores?.length) setAllStores(dbStores.map(rowToStore));
+      })
+      .catch((e) => setDbError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -4343,6 +4545,13 @@ function App() {
   const addStore = async (newStore) => {
     setAllStores((ss) => [newStore, ...ss]);
     setAddStoreOpen(false);
+    // Auto-select the new store with a clean slate
+    setActiveStoreId(newStore.id);
+    activeStoreIdRef.current = newStore.id;
+    setStoreData(newStore);
+    setNavView("store");
+    setTab("overview");
+    setEntries([]); setLiveTasks([]); setLiveFlags([]); setLiveFiles([]); setBlockers([]);
     flashToast(`Store ${newStore.id} added`);
     if (!SB.configured()) return;
     try {
@@ -4441,6 +4650,24 @@ function App() {
   };
 
 
+  // ── Drag-to-resize ───────────────────────────────────────
+  const startNavResize = (e) => {
+    e.preventDefault();
+    const startX = e.clientX, startW = navW;
+    const onMove = (ev) => setNavW(Math.max(160, Math.min(380, startW + ev.clientX - startX)));
+    const onUp   = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+  const startRailResize = (e) => {
+    e.preventDefault();
+    const startX = e.clientX, startW = railW;
+    const onMove = (ev) => setRailW(Math.max(240, Math.min(480, startW - ev.clientX + startX)));
+    const onUp   = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
   // ── Edit note ─────────────────────────────────────────────
   const editNote = async (entry, updates) => {
     setEntries((es) => es.map((e) => e === entry ? { ...e, ...updates } : e));
@@ -4486,10 +4713,11 @@ function App() {
     r.style.setProperty("--accent-h", tweaks.accentHue);
   }, [tweaks]);
 
-  const isStoreView = navView === "store";
+  const isStoreView = navView === "store" && activeStoreId !== null && storeData !== null;
 
   return (
-    <div className="app">
+    <div className="app" style={{"--nav-w": navW+"px", "--rail-w": railW+"px"}}>
+      <div style={{display:"flex",flexShrink:0,width:"var(--nav-w)",position:"relative"}}>
       <LeftNav
         stores={allStores}
         allTasks={liveTasks}
@@ -4505,6 +4733,8 @@ function App() {
         activeUser={activeUser}
         onChangeUser={() => setUserPickerOpen(true)}
       />
+      <div className="resize-handle resize-handle-right" onMouseDown={startNavResize} />
+      </div>
 
       <main className="main">
         {isStoreView && (
@@ -4512,7 +4742,13 @@ function App() {
             onNewNote={goToNotes} onFlag={() => setFlagOpen(true)}
             onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)} />
         )}
-        {isStoreView && <TabBar active={tab} onSelect={setTab} />}
+        {isStoreView && <TabBar active={tab} onSelect={setTab} counts={{
+  timeline: entries.length,
+  notes: entries.filter((e) => e.kind==="note").length,
+  tasks: liveTasks.filter((t) => t.state!=="Done").length,
+  comms: entries.filter((e) => e.kind==="comm").length,
+  files: liveFiles.length,
+}} />}
 
         {!SB.configured() && (
           <div className="config-banner">
@@ -4524,6 +4760,11 @@ function App() {
         <div className="content">
           <div className="content-main">
             {loading && <div className="loading-bar" />}
+
+            {/* No store selected → welcome dashboard */}
+            {!activeStoreId && navView === "store" && (
+              <WelcomeDashboard stores={allStores} onSelectStore={selectStore} onAddStore={() => setAddStoreOpen(true)} onImportCSV={() => setImportOpen(true)} />
+            )}
 
             {/* Global nav views */}
             {navView === "tasks"    && <GlobalTasksView tasks={liveTasks} onStateChange={updateTaskState} storeId={activeStoreId} flashToast={flashToast} />}
@@ -4544,7 +4785,10 @@ function App() {
             {isStoreView && tab === "audit"     && <Audit />}
           </div>
           {tweaks.showRail && isStoreView && (
-            <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} tasks={liveTasks} blockers={blockers} onTaskClick={null} />
+            <div style={{display:"flex",flexShrink:0,width:"var(--rail-w)",position:"relative"}}>
+              <div className="resize-handle resize-handle-left" onMouseDown={startRailResize} />
+              <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} tasks={liveTasks} blockers={blockers} onTaskClick={null} />
+            </div>
           )}
         </div>
       </main>

@@ -2646,7 +2646,7 @@ function WelcomeDashboard({ stores, onSelectStore, onAddStore, onImportCSV }) {
 // ============================================================
 function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=[], onSelectStore }) {
   const [sortTeam, setSortTeam]   = useState("all");
-  const [sortState, setSortState] = useState("all");
+  const [sortState, setSortState] = useState("Open");
   const [activeTask, setActiveTask] = useState(null);
 
   const owners = ["all", ...new Set(tasks.map((t) => t.owner).filter(Boolean))];
@@ -2654,7 +2654,12 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=
 
   const filtered = tasks
     .filter((t) => sortTeam  === "all" || t.owner === sortTeam)
-    .filter((t) => sortState === "all" || t.state === sortState);
+    .filter((t) => sortState === "all" || t.state === sortState)
+    .sort((a, b) => {
+      // Open first, Waiting second, Done last
+      const order = { Open: 0, Waiting: 1, Done: 2 };
+      return (order[a.state] ?? 3) - (order[b.state] ?? 3);
+    });
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -3505,9 +3510,10 @@ function App() {
 
   // ── Update task state ────────────────────────────────────
   const updateTaskState = async (taskId, newState) => {
-    const prevTask = liveTasks.find((t) => t.id === taskId);
+    const prevTask = liveTasks.find((t) => t.id === taskId) || allStoreTasks.find((t) => t.id === taskId);
     const prevState = prevTask?.state || "?";
     setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state:newState } : t));
+    setAllStoreTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state:newState } : t));
     flashToast(`Task → ${newState}`);
 
     // Track state change in timeline

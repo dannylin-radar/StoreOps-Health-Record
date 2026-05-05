@@ -2426,8 +2426,10 @@ function LeftNav({ stores=[], allTasks=[], allFlags=[], allBlockers=[], onAddSto
           <li key={item.id} className={cx("nav-item", navView===item.id && "is-active")}
             onClick={() => onNavSelect(item.id)}>
             <span className="nav-label">{item.label}</span>
-            {item.count > 0 && (
-              <span className={cx("nav-count mono", item.id==="blockers" && item.count > 0 && "nav-count-blocker")}>{item.count}</span>
+            {item.count != null && (
+              <span className={cx("nav-count mono", item.id==="blockers" && item.count > 0 && "nav-count-blocker")}>
+                {item.count}
+              </span>
             )}
           </li>
         ))}
@@ -3814,9 +3816,9 @@ function App() {
       <div style={{display:"flex",flexShrink:0,width:"var(--nav-w)",position:"relative"}}>
       <LeftNav
         stores={allStores}
-        allTasks={liveTasks}
-        allFlags={liveFlags}
-        allBlockers={blockers}
+        allTasks={SB.configured() ? allStoreTasks : liveTasks}
+        allFlags={SB.configured() ? allStoreFlags : liveFlags}
+        allBlockers={SB.configured() ? allStoreBlockers : blockers}
         onAddStore={() => setAddStoreOpen(true)}
         onImportCSV={() => setImportOpen(true)}
         onNavSelect={setNavView}

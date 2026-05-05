@@ -1859,13 +1859,7 @@ const TASKS = [
 { id: "T-1040", title: "Validate planogram against shipping manifest", state: "Done", owner: "Sam O.", due: "Apr 26", flag: null }];
 
 
-const TEAM = [
-  { name: "Priya Shah", role: "Implementation lead", team: "Implementation", load: "primary", initials: "PS", since: "Mar 14" },
-  { name: "Jordan Reyes", role: "Deployment manager", team: "Deployment", load: "active", initials: "JR", since: "Apr 1" },
-  { name: "Sam Okafor", role: "Store planning", team: "Store Planning", load: "active", initials: "SO", since: "Apr 8" },
-  { name: "Alex Chen", role: "Support eng", team: "Support", load: "watching", initials: "AC", since: "Apr 22" },
-  { name: "Mei Tanaka", role: "Legal", team: "Legal", load: "watching", initials: "MT", since: "Apr 24" },
-];
+const TEAM = []; // No default team members — add via the Team editor
 
 const CONTACTS = [
 { name: "Marcus Webb", role: "Legal counsel", org: "Whole Foods Market", email: "m.webb@wfm.example", primary: true },
@@ -2516,36 +2510,62 @@ function TimelineItem({ e, onEdit, onDelete }) {
 // ============================================================
 // AUDIT
 // ============================================================
-function Audit() {
-  const rows = [
-  ["Apr 30 14:22:11", "priya@", "note.create", "id=N-2241 sev=blocker action=true"],
-  ["Apr 30 11:08:02", "system", "health.change", "from=green to=yellow reason=coi_age>10"],
-  ["Apr 29 16:50:43", "jordan@", "task.update", "id=T-1041 state=Open→Done"],
-  ["Apr 28 09:14:20", "alex@", "comm.ingest", "src=email msg-id=<webb@wfm…>"],
-  ["Apr 27 13:02:09", "priya@", "file.upload", "name=audit_WFM-1247.pdf size=2.1MB"],
-  ["Apr 24 10:30:00", "sam@", "note.create", "id=N-2188 sev=info"],
-  ["Apr 22 09:00:00", "system", "phase.change", "from=Scheduled to=COI"]];
+function Audit({ entries = [], tasks = [], files = [] }) {
+  // Build audit rows from real activity across entries, tasks, files
+  const rows = [];
+
+  entries.forEach((e) => {
+    const actor = e.who === "system" ? "system" : (e.who || "").split(" ").map((w,i) => i===0 ? w.toLowerCase().slice(0,6)+"@" : "").join("").replace("@","@");
+    const shortWho = e.who === "system" ? "system" : (e.who||"").split(" ").map(w=>w[0]).join("").toLowerCase()+"@";
+    const ts = e.created_at ? new Date(e.created_at).toISOString().replace("T"," ").slice(0,19) : (e.t || "—");
+    rows.push([ts, shortWho, `${e.kind}.create`, `sev=${e.sev||"info"}${e.action?" action=true":""}`]);
+  });
+
+  tasks.forEach((t) => {
+    rows.push(["—", (t.owner||"?").split(" ").map(w=>w[0]).join("").toLowerCase()+"@", "task.create", `id=${t.id} state=${t.state}`]);
+  });
+
+  files.forEach((f) => {
+    rows.push([f.when||"—", (f.who||"system"), "file.upload", `name=${f.name} size=${f.size||"?"}`]);
+  });
+
+  // Sort newest first by timestamp string
+  rows.sort((a, b) => b[0].localeCompare(a[0]));
 
   return (
     <div className="audit">
       <div className="files-head">
-        <h3>Audit log <span className="muted-tx mono">{rows.length} of 312</span></h3>
-        <span className="muted-tx mono">immutable · exportable</span>
+        <h3>Audit log <span className="muted-tx mono">{rows.length}</span></h3>
+        <span className="muted-tx mono">immutable · auto-generated</span>
       </div>
-      <table className="audit-tbl mono">
-        <tbody>
-          {rows.map((r, i) =>
-          <tr key={i}>
-              <td className="audit-t">{r[0]}</td>
-              <td className="audit-u">{r[1]}</td>
-              <td className="audit-a">{r[2]}</td>
-              <td className="audit-d">{r[3]}</td>
+      {rows.length === 0 ? (
+        <div style={{padding:"48px 20px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t13)"}}>
+          No activity yet. The audit log will populate as notes, tasks, and files are added.
+        </div>
+      ) : (
+        <table className="audit-tbl mono">
+          <thead>
+            <tr style={{background:"var(--panel)"}}>
+              <th className="audit-t" style={{padding:"6px 8px",fontWeight:600,fontSize:"var(--t11)",color:"var(--muted-fg)",textTransform:"uppercase"}}>Timestamp</th>
+              <th className="audit-u" style={{padding:"6px 8px",fontWeight:600,fontSize:"var(--t11)",color:"var(--muted-fg)",textTransform:"uppercase"}}>User</th>
+              <th className="audit-a" style={{padding:"6px 8px",fontWeight:600,fontSize:"var(--t11)",color:"var(--muted-fg)",textTransform:"uppercase"}}>Action</th>
+              <th className="audit-d" style={{padding:"6px 8px",fontWeight:600,fontSize:"var(--t11)",color:"var(--muted-fg)",textTransform:"uppercase"}}>Detail</th>
             </tr>
-          )}
-        </tbody>
-      </table>
-    </div>);
-
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td className="audit-t">{r[0]}</td>
+                <td className="audit-u">{r[1]}</td>
+                <td className="audit-a">{r[2]}</td>
+                <td className="audit-d">{r[3]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
 }
 
 // ============================================================
@@ -2805,38 +2825,42 @@ function renderWithCitations(text) {
 // ============================================================
 // COMMS
 // ============================================================
-function Comms() {
-  const items = [
-  { from: "Marcus Webb <m.webb@wfm.example>", subj: "RE: COI rev. 2 — language tweak", t: "Apr 28 09:14", snippet: "Hi Priya — small ask: in §3 can we say \"each location\" rather than \"site-specific\"? Otherwise looks good. Will sign once updated.", tags: ["legal", "coi"] },
-  { from: "Lena Park <l.park@wfm.example>", subj: "Planogram v_final — approved", t: "Apr 24 10:28", snippet: "Approved. Endcap at aisle 7 confirmed. Loop me when install dates are firm.", tags: ["category"] },
-  { from: "Call summary · Dan Ortiz", subj: "Pre-install logistics — 18 min", t: "Apr 22 15:00", snippet: "Confirmed loading dock access overnight, parking after 9pm. No freight elevator restrictions. Day-of contact tree via Lena.", tags: ["call", "logistics"] },
-  { from: "Marcus Webb <m.webb@wfm.example>", subj: "COI rev. 1 — feedback", t: "Apr 18 11:02", snippet: "Need WFM listed as additional insured per location, not blanket. Attaching their template.", tags: ["legal"] },
-  { from: "Sam Okafor → category team", subj: "Planogram draft v3", t: "Apr 16 09:40", snippet: "v3 attached. 142 fixtures total, removed the 6-fixture run on north wall per Lena's note.", tags: ["planning"] },
-  { from: "Jordan Reyes → ops", subj: "Site survey scheduled", t: "Apr 15 17:22", snippet: "On for Thu Apr 18 morning. Will cover dock, panel, sightlines, refrigeration adjacency.", tags: ["deployment"] }];
-
+function Comms({ entries = [] }) {
+  const items = entries.filter((e) => e.kind === "comm");
   return (
     <div className="comms">
-      <div className="files-head"><h3>Comms <span className="muted-tx mono">{items.length}</span></h3>
-        <span className="muted-tx mono">ingested · email + call summaries</span>
+      <div className="files-head">
+        <h3>Comms <span className="muted-tx mono">{items.length}</span></h3>
+        <span className="muted-tx mono">email + call summaries</span>
       </div>
-      <ul className="comms-list">
-        {items.map((c, i) =>
-        <li key={i} className="comm-row">
-            <span className="mono comm-t">{c.t}</span>
-            <div className="comm-body">
-              <div className="comm-line1">
-                <span className="comm-from">{c.from}</span>
-                <div className="grow" />
-                {c.tags.map((t) => <span key={t} className="tag mono">{t}</span>)}
+      {items.length === 0 ? (
+        <div style={{padding:"48px 20px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t13)"}}>
+          No comms yet for this store.
+          <span style={{fontSize:"var(--t12)",marginTop:4,display:"block",color:"var(--muted-fg)"}}>
+            Comms appear here when timeline entries of type "comm" are added.
+          </span>
+        </div>
+      ) : (
+        <ul className="comms-list">
+          {items.map((c, i) => (
+            <li key={c.id || i} className="comm-row">
+              <span className="mono comm-t">{c.t}</span>
+              <div className="comm-body">
+                <div className="comm-line1">
+                  <span className="comm-from">{c.who}{c.team ? ` · ${c.team}` : ""}</span>
+                  <div className="grow" />
+                  {c.sev && c.sev !== "info" && <span className="tag mono">{c.sev}</span>}
+                </div>
+                <div className="comm-subj">{c.title}</div>
+                {c.body && <div className="comm-snip muted-tx">{c.body}</div>}
+                {c.attachment && <div className="tl-attach" style={{marginTop:4}}><Icon.paper /><span className="mono">{c.attachment}</span></div>}
               </div>
-              <div className="comm-subj">{c.subj}</div>
-              <div className="comm-snip muted-tx">{c.snippet}</div>
-            </div>
-          </li>
-        )}
-      </ul>
-    </div>);
-
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 // ============================================================
@@ -3468,42 +3492,35 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
             <button className="btn primary" type="submit" disabled={!newTitle.trim()}><Icon.plus /> Add task</button>
           </form>
 
-          <div style={{display:"flex",flexDirection:"column",gap:2,border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",background:"var(--bg-elev)"}}>
+          <div className="task-cols">
             {cols.map((c) => {
               const items = filtered.filter((t) => t.state === c.id);
-              if (items.length === 0) return null;
               return (
-                <div key={c.id}>
-                  {/* Group header */}
-                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 14px",background:"var(--panel)",borderBottom:"1px solid var(--border)"}}>
+                <div key={c.id} className="task-col">
+                  <div className="task-col-head">
                     <Dot tone={c.tone==="ok"?"green":c.tone==="watch"?"yellow":"neutral"} />
-                    <span style={{fontSize:"var(--t12)",fontWeight:600,color:"var(--fg-2)",textTransform:"uppercase",letterSpacing:".04em"}}>{c.id}</span>
-                    <span className="mono" style={{fontSize:"var(--t11)",color:"var(--muted-fg)"}}>{items.length}</span>
+                    <span>{c.id}</span>
+                    <span className="mono task-col-n">{items.length}</span>
                   </div>
-                  {/* Task rows */}
-                  {items.map((t, idx) => (
-                    <div key={t.id}
-                      className={cx(t.flag==="blocker" && "is-blocker")}
-                      onClick={() => setActiveTask(t)}
-                      style={{
-                        display:"flex",alignItems:"center",gap:12,
-                        padding:"10px 14px",cursor:"pointer",
-                        borderBottom: idx < items.length-1 ? "1px solid var(--border)" : "none",
-                        background:"var(--bg)",transition:"background .1s",
-                      }}
-                      onMouseEnter={(e)=>e.currentTarget.style.background="var(--hover)"}
-                      onMouseLeave={(e)=>e.currentTarget.style.background="var(--bg)"}>
-                      <span className="mono" style={{fontSize:"var(--t11)",color:"var(--muted-fg)",flexShrink:0,width:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.id}</span>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontWeight:500,fontSize:"var(--t13)",color:"var(--fg)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
-                        <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginTop:2,display:"flex",alignItems:"center",gap:6}}>
-                          <span className="avatar avatar-xs mono" style={{flexShrink:0}}>{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
-                          <span>{t.owner||"Unassigned"}</span>
-                          {t.due && t.due!=="—" && <><span>·</span><span className="mono">due {t.due}</span></>}
-                        </div>
+                  {items.length === 0 && (
+                    <div style={{padding:"20px 10px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t12)",border:"1px dashed var(--border)",borderRadius:"var(--radius)",margin:"4px 0"}}>
+                      No {c.id.toLowerCase()} tasks
+                    </div>
+                  )}
+                  {items.map((t) => (
+                    <div key={t.id} className={cx("task-card", t.flag==="blocker" && "is-blocker")}
+                      onClick={() => setActiveTask(t)} style={{cursor:"pointer"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
+                        <span className="mono task-id" style={{fontSize:"var(--t11)",color:"var(--muted-fg)",flexShrink:0,paddingTop:1}}>{t.id}</span>
+                        {t.flag && <Pill tone="blocker" style={{flexShrink:0,fontSize:10}}>blocker</Pill>}
                       </div>
-                      {t.flag && <Pill tone="blocker" style={{flexShrink:0}}>blocker</Pill>}
-                      <div style={{display:"flex",gap:4,flexShrink:0}} onClick={(e)=>e.stopPropagation()}>
+                      <div className="task-card-title" style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)",lineHeight:1.4,marginBottom:8}}>{t.title}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:6,fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
+                        <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
+                        <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.owner||"Unassigned"}</span>
+                        <span className="mono" style={{flexShrink:0}}>{t.due}</span>
+                      </div>
+                      <div className="task-card-actions" onClick={(e)=>e.stopPropagation()}>
                         {c.id!=="Open"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Open")}>Open</button>}
                         {c.id!=="Waiting" && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Waiting")}>Waiting</button>}
                         {c.id!=="Done"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Done")}>Done</button>}
@@ -3514,11 +3531,6 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
                 </div>
               );
             })}
-            {filtered.length === 0 && (
-              <div style={{padding:"32px 14px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t13)"}}>
-                No tasks yet. Add one above.
-              </div>
-            )}
           </div>
         </>
       )}
@@ -4339,8 +4351,7 @@ function UserPickerModal({ open, onClose, team, activeUser, onSelect }) {
   }, [open, onClose]);
   if (!open) return null;
 
-  // Combine team members with TEAM defaults
-  const allUsers = [...new Set([...TEAM.map(m=>m.name), ...team.map(m=>m.name)])];
+  const allUsers = team.map(m=>m.name).filter(Boolean);
 
   return (
     <div className="ai-modal-scrim" onMouseDown={onClose}>
@@ -4821,9 +4832,9 @@ function App() {
                 blockers={blockers} onAddBlocker={addBlocker} onResolveBlocker={resolveBlocker}
                 storeId={activeStoreId} flashToast={flashToast} activeUser={activeUser} />
             )}
-            {isStoreView && tab === "comms"     && <Comms />}
+            {isStoreView && tab === "comms"     && <Comms entries={entries} />}
             {isStoreView && tab === "files"     && <Files files={liveFiles} onUpload={uploadFile} />}
-            {isStoreView && tab === "audit"     && <Audit />}
+            {isStoreView && tab === "audit"     && <Audit entries={entries} tasks={liveTasks} files={liveFiles} />}
           </div>
           {tweaks.showRail && isStoreView && (
             <div style={{display:"flex",flexShrink:0,width:"var(--rail-w)",position:"relative"}}>

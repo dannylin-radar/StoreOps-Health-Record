@@ -3111,9 +3111,9 @@ function FlagModal({ open, onClose, onSubmit }) {
           <label className="field">
             <span className="field-l">Severity</span>
             <div className="sev-seg">
-              {["info", "watch", "blocker"].map((s) =>
-              <button type="button" key={s} className={cx("sev-btn", `sev-${s}`, tone === s && "is-on")} onClick={() => setTone(s)}>
-                  <Dot tone={s === 'info' ? 'neutral' : s} /> {s}
+              {[["info","Flag","neutral"], ["watch","Watcher","yellow"], ["blocker","Blocker","red"]].map(([val, label, dot]) =>
+                <button type="button" key={val} className={cx("sev-btn", `sev-${val}`, tone===val && "is-on")} onClick={() => setTone(val)}>
+                  <Dot tone={dot} /> {label}
                 </button>
               )}
             </div>
@@ -4040,12 +4040,13 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=
 // ============================================================
 // GLOBAL FLAGS VIEW
 // ============================================================
-function GlobalFlagsView({ flags, onResolve, allStores=[], onSelectStore }) {
+function GlobalFlagsView({ flags, onResolve, allStores=[], onSelectStore, allBlockerFlags=[] }) {
   const [sortTeam, setSortTeam] = useState("all");
   const teams = ["all", ...new Set(flags.map((f) => f.team).filter(Boolean))];
   const filtered = sortTeam === "all" ? flags : flags.filter((f) => f.team === sortTeam);
-  const open = filtered.filter((f) => !f.resolved);
-  const resolved = filtered.filter((f) => f.resolved);
+  // Flags view = watch + info. Blockers (tone="blocker") show in Blockers view.
+  const open = filtered.filter((f) => !f.resolved && f.tone !== "blocker");
+  const resolved = filtered.filter((f) => f.resolved && f.tone !== "blocker");
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -4511,7 +4512,10 @@ function UserPickerModal({ open, onClose, team, activeUser, onSelect }) {
               <input className="new-task-title" style={{flex:1}} placeholder="Custom name…"
                 value={custom} onChange={(e) => setCustom(e.target.value)}
                 onKeyDown={(e) => { if (e.key==="Enter" && custom.trim()) onSelect(custom.trim()); }} />
-              <button className="btn primary" disabled={!custom.trim()} onClick={() => onSelect(custom.trim())}>
+              <button className="btn primary" disabled={!custom.trim()} onClick={() => {
+                onSelect(custom.trim());
+                try { localStorage.setItem("storeops_active_user", custom.trim()); } catch {}
+              }}>
                 <Icon.check />
               </button>
             </div>
@@ -4558,7 +4562,9 @@ function App() {
   const [navW,           setNavW]           = useState(220);
   const [railW,          setRailW]          = useState(300);
   const [activeStoreId,  setActiveStoreId]  = useState(null); // null = no store selected
-  const [activeUser,     setActiveUser]     = useState("Priya Shah");
+  const [activeUser,     setActiveUser]     = useState(() => {
+    try { return localStorage.getItem("storeops_active_user") || ""; } catch { return ""; }
+  });
   const [userPickerOpen, setUserPickerOpen] = useState(false);
   const composerRef = useRef();
   const activeStoreIdRef = useRef(null);
@@ -4583,8 +4589,11 @@ function App() {
     setTimeout(() => setToast(null), 3200);
   };
 
-  const activeUserRef = useRef("Priya Shah");
-  useEffect(() => { activeUserRef.current = activeUser; }, [activeUser]);
+  const activeUserRef = useRef(activeUser || "");
+  useEffect(() => {
+    activeUserRef.current = activeUser;
+    try { if (activeUser) localStorage.setItem("storeops_active_user", activeUser); } catch {}
+  }, [activeUser]);
 
   const nowStamp = () => {
     const now = new Date();
@@ -4687,7 +4696,9 @@ function App() {
   // ── Raise flag ───────────────────────────────────────────
   const submitFlag = async ({ label, tone, team, reason }) => {
     const t = nowStamp();
-    setLiveFlags((fs) => [{ label, tone, team, since:"just now" }, ...fs]);
+    const newFlag = { label, tone, team, since:"just now", resolved:false, store_id: activeStoreIdRef.current };
+    setLiveFlags((fs) => [newFlag, ...fs]);
+    setAllStoreFlags((fs) => [newFlag, ...fs]); // keep global view in sync
     setEntries((es) => [{ kind:"note", who:activeUserRef.current, team, sev:tone,
       title:`Flag raised: ${label}`, body:reason||"—",
       action:true, due:"—", mentions:[`@${team.toLowerCase().replace(/ /g,"")}`], t }, ...es]);
@@ -4695,18 +4706,24 @@ function App() {
     flashToast(`Flag raised · assigned to ${team}`);
     if (!SB.configured()) return;
     try {
-      await Promise.all([
+      const [flagRow] = await Promise.all([
         SB.insertFlag({ store_id:activeStoreIdRef.current, label, tone, team, since:"just now" }),
         SB.insertEntry({ store_id:activeStoreIdRef.current, t, who:activeUserRef.current, team, kind:"note", sev:tone,
           title:`Flag raised: ${label}`, body:reason||"—",
           action:true, due:"—", mentions:[`@${team.toLowerCase().replace(/ /g,"")}`] }),
       ]);
+      if (flagRow?.id) {
+        const withId = { ...newFlag, id: flagRow.id };
+        setLiveFlags((fs) => fs.map((f) => f===newFlag ? withId : f));
+        setAllStoreFlags((fs) => fs.map((f) => f===newFlag ? withId : f));
+      }
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Resolve flag ─────────────────────────────────────────
   const resolveFlag = async (flagId) => {
-    setLiveFlags((fs) => fs.map((f) => f.id === flagId ? {...f, resolved:true} : f));
+    setLiveFlags((fs) => fs.map((f) => f.id===flagId ? {...f, resolved:true} : f));
+    setAllStoreFlags((fs) => fs.map((f) => f.id===flagId ? {...f, resolved:true} : f));
     flashToast("Flag resolved");
     if (!SB.configured()) return;
     try { await SB.resolveFlag(flagId); } catch (e) { flashToast("Sync failed: " + e.message, true); }
@@ -4714,19 +4731,25 @@ function App() {
 
   // ── Add blocker ───────────────────────────────────────────
   const addBlocker = async (data) => {
-    const optimistic = { id: Date.now(), ...data, resolved:false };
+    const optimistic = { id: Date.now(), ...data, resolved:false, store_id: activeStoreIdRef.current };
     setBlockers((bs) => [optimistic, ...bs]);
+    setAllStoreBlockers((bs) => [optimistic, ...bs]); // keep global view in sync
     flashToast("Blocker added");
     if (!SB.configured()) return;
     try {
       const row = await SB.insertBlocker({ store_id:activeStoreIdRef.current, ...data });
-      if (row?.id) setBlockers((bs) => bs.map((b) => b.id === optimistic.id ? dbRowToBlocker(row) : b));
+      if (row?.id) {
+        const real = dbRowToBlocker(row);
+        setBlockers((bs) => bs.map((b) => b.id===optimistic.id ? real : b));
+        setAllStoreBlockers((bs) => bs.map((b) => b.id===optimistic.id ? real : b));
+      }
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Resolve blocker ───────────────────────────────────────
   const resolveBlocker = async (blockerId) => {
-    setBlockers((bs) => bs.map((b) => b.id === blockerId ? {...b, resolved:true} : b));
+    setBlockers((bs) => bs.map((b) => b.id===blockerId ? {...b, resolved:true} : b));
+    setAllStoreBlockers((bs) => bs.map((b) => b.id===blockerId ? {...b, resolved:true} : b));
     flashToast("Blocker resolved");
     if (!SB.configured()) return;
     try { await SB.resolveBlocker(blockerId); } catch (e) { flashToast("Sync failed: " + e.message, true); }
@@ -4800,7 +4823,14 @@ function App() {
     setTeamOpen(false);
     flashToast("Team saved");
     if (!SB.configured()) return;
-    try { await SB.replaceTeam(STORE.id, members); } catch (e) { flashToast("Sync failed: " + e.message, true); }
+    try {
+      await SB.replaceTeam(activeStoreIdRef.current || "global", members);
+      // Reload from DB to get real IDs
+      const rows = await SB.getTeam(activeStoreIdRef.current || "global");
+      if (rows?.length) setLiveTeam(rows.map((r) => ({
+        name:r.name, role:r.role, team:r.team, load:r.load, initials:r.initials, since:r.since
+      })));
+    } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Phase helpers ─────────────────────────────────────────
@@ -4995,7 +5025,7 @@ function App() {
             {/* Global nav views */}
             {navView === "tasks"    && <GlobalTasksView tasks={SB.configured() ? allStoreTasks : liveTasks} onStateChange={updateTaskState} storeId={activeStoreId} flashToast={flashToast} allStores={allStores} onSelectStore={selectStore} />}
             {navView === "flags"    && <GlobalFlagsView flags={SB.configured() ? allStoreFlags : liveFlags} onResolve={resolveFlag} allStores={allStores} onSelectStore={selectStore} />}
-            {navView === "blockers" && <GlobalBlockersView blockers={SB.configured() ? allStoreBlockers : blockers} onAdd={addBlocker} onResolve={resolveBlocker} storeId={activeStoreId} flashToast={flashToast} allStores={allStores} onSelectStore={selectStore} />}
+            {navView === "blockers" && <GlobalBlockersView blockers={SB.configured() ? allStoreBlockers : blockers} flagBlockers={SB.configured() ? allStoreFlags : liveFlags} onAdd={addBlocker} onResolve={resolveBlocker} storeId={activeStoreId} flashToast={flashToast} allStores={allStores} onSelectStore={selectStore} />}
 
             {/* Store tabs */}
             {isStoreView && tab === "overview"  && <Overview store={storeData} onSaveStore={saveStore} flags={liveFlags} tasks={liveTasks} />}

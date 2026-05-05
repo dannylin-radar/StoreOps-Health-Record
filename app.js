@@ -3923,7 +3923,7 @@ function App() {
         subState={subState} onToggleSub={toggleSub}
         onPostNote={postPhaseNote} onCreateTask={createPhaseTask}
         phaseTasks={phaseOpen ? (phaseTasks[phaseOpen]||[]) : []}
-        phaseNotes={phaseOpen ? entries.filter((e) => e.kind==="note" && e.title?.startsWith(`[${phaseOpen}]`)) : []}
+        phaseNotes={phaseOpen ? entries.filter((e) => e.kind==="note" && e.title && e.title.indexOf("[" + phaseOpen + "]") === 0) : []}
       />
 
       {toast && (

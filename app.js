@@ -2715,11 +2715,13 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=
 // ============================================================
 function GlobalFlagsView({ flags, onResolve, allStores=[], onSelectStore, allBlockerFlags=[] }) {
   const [sortTeam, setSortTeam] = useState("all");
+  const [showResolved, setShowResolved] = useState(false);
+
   const teams = ["all", ...new Set(flags.map((f) => f.team).filter(Boolean))];
   const filtered = sortTeam === "all" ? flags : flags.filter((f) => f.team === sortTeam);
-  // Flags view = watch + info. Blockers (tone="blocker") show in Blockers view.
-  const open = filtered.filter((f) => !f.resolved && f.tone !== "blocker");
-  const resolved = filtered.filter((f) => f.resolved && f.tone !== "blocker");
+  const open     = filtered.filter((f) => !f.resolved && f.tone !== "blocker");
+  const resolved = filtered.filter((f) =>  f.resolved && f.tone !== "blocker");
+  const displayed = showResolved ? [...open, ...resolved] : open;
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -2734,32 +2736,61 @@ function GlobalFlagsView({ flags, onResolve, allStores=[], onSelectStore, allBlo
             </button>
           ))}
         </div>
+        {resolved.length > 0 && (
+          <button className="btn ghost sm" onClick={() => setShowResolved(v => !v)}>
+            {showResolved ? "Hide resolved" : `Show ${resolved.length} resolved`}
+          </button>
+        )}
       </div>
 
       <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",background:"var(--bg-elev)",overflow:"hidden"}}>
-        {open.length === 0 && <div className="drawer-empty">No open flags.</div>}
-        {open.map((f, i) => (
-          <div key={f.id || i} style={{
-            display:"grid",gridTemplateColumns:"14px 1fr auto auto auto",
-            alignItems:"center",gap:10,
-            padding:"10px var(--pad-3)",
-            borderBottom: i < open.length-1 ? "1px solid var(--border)" : "none",
-          }}>
-            <Dot tone={f.tone} />
-            <div>
-              <div style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)"}}>{f.label}</div>
-              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{f.team} · {f.since} {f.store_id && <span className="mono" style={{color:"var(--accent)"}}>{f.store_id}</span>}</div>
+        {displayed.length === 0 && <div className="drawer-empty">No open flags.</div>}
+        {displayed.map((f, i) => {
+          const store = allStores.find(s => s.id === f.store_id);
+          return (
+            <div key={f.id || i} style={{
+              display:"flex", alignItems:"center", gap:12,
+              padding:"10px 14px",
+              borderBottom: i < displayed.length-1 ? "1px solid var(--border)" : "none",
+              opacity: f.resolved ? 0.55 : 1,
+              background: "var(--bg)",
+            }}>
+              <Dot tone={f.tone==="blocker"?"red":f.tone==="watch"?"yellow":"neutral"} style={{flexShrink:0}} />
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)",
+                  textDecoration: f.resolved ? "line-through" : "none",
+                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {f.label}
+                </div>
+                <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginTop:2,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                  {f.team && <span>{f.team}</span>}
+                  {f.since && <><span>·</span><span>{f.since}</span></>}
+                  {f.store_id && (
+                    <span className="mono" style={{
+                      color:"var(--accent)",background:"var(--accent-soft)",
+                      padding:"1px 5px",borderRadius:3,fontSize:10,fontWeight:600,
+                    }}>{f.store_id}</span>
+                  )}
+                </div>
+              </div>
+              <Pill tone={f.tone==="blocker"?"blocker":f.tone==="watch"?"watch":"info"} style={{flexShrink:0}}>
+                {f.tone}
+              </Pill>
+              {store && (
+                <button className="btn ghost sm" style={{flexShrink:0}}
+                  onClick={() => onSelectStore(store)}>
+                  Open store
+                </button>
+              )}
+              {!f.resolved && (
+                <button className="btn ghost sm" style={{flexShrink:0}}
+                  onClick={() => onResolve && onResolve(f.id)}>
+                  Resolve
+                </button>
+              )}
             </div>
-            <Pill tone={f.tone}>{f.tone}</Pill>
-            {f.store_id && onSelectStore && (() => { const s = allStores.find(x=>x.id===f.store_id); return s ? <button className="btn ghost sm" onClick={() => onSelectStore(s)}>Open store</button> : null; })()}
-            <button className="btn ghost sm" onClick={() => onResolve && onResolve(f.id)}>Resolve</button>
-          </div>
-        ))}
-        {resolved.length > 0 && (
-          <details style={{padding:"8px var(--pad-3)",fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
-            <summary style={{cursor:"pointer",userSelect:"none"}}>{resolved.length} resolved</summary>
-          </details>
-        )}
+          );
+        })}
       </div>
     </div>
   );
@@ -2768,11 +2799,134 @@ function GlobalFlagsView({ flags, onResolve, allStores=[], onSelectStore, allBlo
 // ============================================================
 // GLOBAL BLOCKERS VIEW
 // ============================================================
-function GlobalBlockersView({ blockers, onAdd, onResolve, storeId, flashToast }) {
+function GlobalBlockersView({ blockers, onAdd, onResolve, storeId, flashToast, allStores=[], onSelectStore, flagBlockers=[] }) {
+  const [sortTeam, setSortTeam] = useState("all");
+  const [showResolved, setShowResolved] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ title:"", description:"", tone:"blocker", team:"Implementation" });
+
+  // Combine blockers table + flag-tone blockers
+  const allItems = [
+    ...blockers,
+    ...flagBlockers.filter((f) => f.tone==="blocker" && !blockers.some((b) => b.id===f.id)),
+  ];
+
+  const teams = ["all", ...new Set(allItems.map((b) => b.team).filter(Boolean))];
+  const filtered = sortTeam === "all" ? allItems : allItems.filter((b) => b.team === sortTeam);
+  const open     = filtered.filter((b) => !b.resolved);
+  const resolved = filtered.filter((b) =>  b.resolved);
+  const displayed = showResolved ? [...open, ...resolved] : open;
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    onAdd({ ...form });
+    setForm({ title:"", description:"", tone:"blocker", team:"Implementation" });
+    setAdding(false);
+  };
+
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <h2 style={{margin:0,fontSize:"var(--t18)",fontWeight:600}}>All blockers</h2>
-      <BlockersPanel blockers={blockers} onAdd={onAdd} onResolve={onResolve} storeId={storeId} flashToast={flashToast} />
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <h2 style={{margin:0,fontSize:"var(--t18)",fontWeight:600}}>All blockers</h2>
+        <span className="muted-tx mono">{open.length} open</span>
+        <div className="grow" />
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {teams.map((t) => (
+            <button key={t} className={cx("chip", sortTeam===t && "is-on")} onClick={() => setSortTeam(t)}>
+              {t === "all" ? "All teams" : t}
+            </button>
+          ))}
+        </div>
+        {resolved.length > 0 && (
+          <button className="btn ghost sm" onClick={() => setShowResolved(v => !v)}>
+            {showResolved ? "Hide resolved" : `Show ${resolved.length} resolved`}
+          </button>
+        )}
+        <button className="btn primary sm" onClick={() => setAdding(v => !v)}>
+          <Icon.plus /> Add blocker
+        </button>
+      </div>
+
+      {adding && (
+        <form className="blocker-add-form" onSubmit={submit}>
+          <input className="new-task-title" placeholder="Blocker title *" autoFocus
+            value={form.title} onChange={(e) => setForm(f=>({...f,title:e.target.value}))} />
+          <textarea className="blocker-desc-input" rows={2} placeholder="Description / context…"
+            value={form.description} onChange={(e) => setForm(f=>({...f,description:e.target.value}))} />
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <div className="sev-seg">
+              {[["blocker","red"],["watch","yellow"]].map(([s,dot]) => (
+                <button type="button" key={s} className={cx("sev-btn",`sev-${s}`,form.tone===s&&"is-on")} onClick={() => setForm(f=>({...f,tone:s}))}>
+                  <Dot tone={dot} /> {s}
+                </button>
+              ))}
+            </div>
+            <select className="select-ish mono" value={form.team} onChange={(e) => setForm(f=>({...f,team:e.target.value}))}>
+              {TEAMS.map((t) => <option key={t.id}>{t.id}</option>)}
+            </select>
+            <div className="grow" />
+            <button type="button" className="btn ghost" onClick={() => setAdding(false)}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={!form.title.trim()}>
+              <Icon.flag /> Add
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",background:"var(--bg-elev)",overflow:"hidden"}}>
+        {displayed.length === 0 && !adding && (
+          <div className="drawer-empty">No open blockers. Click "Add blocker" to raise one.</div>
+        )}
+        {displayed.map((b, i) => {
+          const store = allStores.find(s => s.id === b.store_id);
+          return (
+            <div key={b.id || i} style={{
+              display:"flex", alignItems:"flex-start", gap:12,
+              padding:"12px 14px",
+              borderBottom: i < displayed.length-1 ? "1px solid var(--border)" : "none",
+              opacity: b.resolved ? 0.55 : 1,
+              background: b.tone==="blocker" && !b.resolved ? "color-mix(in oklab, var(--bad) 4%, var(--bg))" : "var(--bg)",
+            }}>
+              <Dot tone={b.tone==="blocker"?"red":"yellow"} style={{marginTop:3,flexShrink:0}} />
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)",
+                  textDecoration:b.resolved?"line-through":"none",
+                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {b.title}
+                </div>
+                {b.description && (
+                  <div style={{fontSize:"var(--t12)",color:"var(--fg-2)",marginTop:2,lineHeight:1.45}}>
+                    {b.description}
+                  </div>
+                )}
+                <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginTop:4,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                  {b.team && <span>{b.team}</span>}
+                  {b.store_id && (
+                    <span className="mono" style={{
+                      color:"var(--bad)",background:"var(--bad-soft)",
+                      padding:"1px 5px",borderRadius:3,fontSize:10,fontWeight:600,
+                    }}>{b.store_id}</span>
+                  )}
+                  <Pill tone={b.tone}>{b.tone}</Pill>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:4,flexShrink:0}}>
+                {store && (
+                  <button className="btn ghost sm" onClick={() => onSelectStore(store)}>
+                    Open store
+                  </button>
+                )}
+                {!b.resolved && (
+                  <button className="btn ghost sm" onClick={() => onResolve(b.id)}>
+                    Resolve
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

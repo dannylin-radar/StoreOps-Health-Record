@@ -1963,13 +1963,13 @@ const Icon = {
 // ============================================================
 // HEADER (breadcrumb, store id, track strip, snapshot row)
 // ============================================================
-function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit }) {
+function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit, onShowAll }) {
   return (
     <header className="store-header">
       <div className="crumbs">
-        <span>Stores</span>
+        <span style={{cursor:"pointer",color:"var(--accent)"}} onClick={onShowAll}>Stores</span>
         <Icon.chevR />
-        <span>{store.retailer}</span>
+        <span style={{cursor:"pointer",color:"var(--accent)"}} onClick={onShowAll}>{store.retailer}</span>
         <Icon.chevR />
         <span className="crumb-current mono">{store.id}</span>
         <span className="crumb-tail">· {store.name}</span>
@@ -2254,9 +2254,11 @@ function Overview({ store = STORE, onSaveStore }) {
   const doneCount = checkItems.filter((_, i) => checkDone[i]).length;
 
   const startEdit = (field, currentVal) => { setEditField(field); setEditVal(currentVal || ""); };
-  const saveField = (field) => {
-    if (onSaveStore) onSaveStore({ ...store, [field]: editVal.trim() });
+  const saveField = (field, directVal) => {
+    const val = directVal !== undefined ? directVal : editVal.trim();
+    if (onSaveStore) onSaveStore({ ...store, [field]: val });
     setEditField(null);
+    setEditVal("");
   };
   const cancelEdit = () => setEditField(null);
 
@@ -2288,23 +2290,41 @@ function Overview({ store = STORE, onSaveStore }) {
     saveChecklistDone(store.id, reindexed);
   };
 
-  const EditableSnap = ({ label, field, value, sub, tone, wide, mono, multiLine }) => {
+  const EditableSnap = ({ label, field, value, sub, tone, wide, mono, multiLine, type="text", options=[] }) => {
     const isEditing = editField === field;
+    const rawVal = store[field] || "";
     return (
-      <div className={cx("snap snap-editable", wide && "snap-wide")} onClick={() => !isEditing && startEdit(field, value)}>
+      <div className={cx("snap snap-editable", wide && "snap-wide")} onClick={() => !isEditing && startEdit(field, rawVal)}>
         <div className="snap-label">{label}</div>
         {isEditing ? (
           <div className="snap-edit-form" onClick={(e) => e.stopPropagation()}>
-            {multiLine
-              ? <textarea className="snap-edit-input" rows={2} autoFocus value={editVal} onChange={(e) => setEditVal(e.target.value)}
-                  onKeyDown={(e) => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); saveField(field); } if (e.key==="Escape") cancelEdit(); }} />
-              : <input className="snap-edit-input" autoFocus value={editVal} onChange={(e) => setEditVal(e.target.value)}
-                  onKeyDown={(e) => { if (e.key==="Enter") saveField(field); if (e.key==="Escape") cancelEdit(); }} />
-            }
-            <div style={{display:"flex",gap:4,marginTop:4}}>
-              <button className="btn primary sm" onClick={() => saveField(field)}><Icon.check /></button>
-              <button className="btn ghost sm" onClick={cancelEdit}>✕</button>
-            </div>
+            {type === "select" ? (
+              <select className="snap-edit-input select-ish mono" autoFocus value={editVal}
+                onChange={(e) => { setEditVal(e.target.value); saveField(field, e.target.value); }}>
+                {options.map((o) => <option key={o} value={o}>{o.charAt(0).toUpperCase()+o.slice(1)}</option>)}
+              </select>
+            ) : type === "date" ? (
+              <input className="snap-edit-input" type="date" autoFocus
+                value={editVal ? new Date(editVal).toISOString().slice(0,10) : ""}
+                onChange={(e) => {
+                  const d = e.target.value ? new Date(e.target.value).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
+                  setEditVal(d); saveField(field, d);
+                }} />
+            ) : multiLine ? (
+              <textarea className="snap-edit-input" rows={2} autoFocus value={editVal}
+                onChange={(e) => setEditVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveField(field);} if(e.key==="Escape")cancelEdit(); }} />
+            ) : (
+              <input className="snap-edit-input" autoFocus value={editVal}
+                onChange={(e) => setEditVal(e.target.value)}
+                onKeyDown={(e) => { if(e.key==="Enter")saveField(field); if(e.key==="Escape")cancelEdit(); }} />
+            )}
+            {type !== "select" && type !== "date" && (
+              <div style={{display:"flex",gap:4,marginTop:4}}>
+                <button className="btn primary sm" onClick={() => saveField(field)}><Icon.check /></button>
+                <button className="btn ghost sm" onClick={cancelEdit}>✕</button>
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -2320,15 +2340,21 @@ function Overview({ store = STORE, onSaveStore }) {
     );
   };
 
+
   return (
     <div className="overview">
       <div className="snap-grid">
-        <EditableSnap label="Phase" field="phase" value={store.phase} sub={`Health: ${store.health}`} tone={store.health === "yellow" ? "yellow" : store.health === "red" ? "red" : "green"} />
-        <EditableSnap label="Health" field="health" value={store.health?.charAt(0).toUpperCase() + store.health?.slice(1)} sub="Click to change" tone={store.health} />
-        <EditableSnap label="Owner" field="ownerPerson" value={store.ownerPerson} sub={store.owner} />
-        <EditableSnap label="Next action" field="nextAction" value={store.nextAction} sub={store.due ? `Due ${store.due}` : "No due date"} tone="yellow" wide multiLine />
-        <EditableSnap label="Risk level" field="risk" value={store.risk?.charAt(0).toUpperCase() + store.risk?.slice(1)} sub="Click to edit" tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"} />
-        <EditableSnap label="Go-live target" field="scheduledLive" value={store.scheduledLive} sub={store.openedOn ? `Opened ${store.openedOn}` : ""} mono />
+        <EditableSnap label="Phase" field="phase" value={store.phase} sub={`Health: ${store.health}`} tone={store.health==="yellow"?"yellow":store.health==="red"?"red":"green"}
+          type="select" options={["Planning","Scheduled","COI","Deployment","Live"]} />
+        <EditableSnap label="Health" field="health" value={store.health?.charAt(0).toUpperCase()+store.health?.slice(1)} sub="Select health status" tone={store.health}
+          type="select" options={["green","yellow","red"]} />
+        <EditableSnap label="Owner" field="ownerPerson" value={store.ownerPerson||"—"} sub={store.owner||""}
+          type="select" options={TEAMS.map(t=>t.id)} optionLabel="Team" secondField="owner" secondOptions={TEAMS.map(t=>t.id)} />
+        <EditableSnap label="Next action" field="nextAction" value={store.nextAction||"No action set"} sub={store.due ? `Due ${store.due}` : "No due date"} tone={store.nextAction?"yellow":null} wide multiLine />
+        <EditableSnap label="Risk level" field="risk" value={store.risk?.charAt(0).toUpperCase()+store.risk?.slice(1)||"Low"} sub="Click to change"
+          tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"}
+          type="select" options={["low","medium","high"]} />
+        <EditableSnap label="Go-live target" field="scheduledLive" value={store.scheduledLive||"Not set"} sub={store.openedOn?`Opened ${store.openedOn}`:""} mono type="date" />
       </div>
 
       <section className="block">
@@ -2535,7 +2561,7 @@ function Audit() {
 // ============================================================
 // RIGHT RAIL
 // ============================================================
-function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam }) {
+function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam, store, tasks=[], blockers=[] }) {
   return (
     <aside className="rail">
       <section className="rail-section">
@@ -2560,21 +2586,17 @@ function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam }) {
 
       <section className="rail-section">
         <div className="rail-head"><h4>Snapshot</h4></div>
-        <dl className="kv">
-          <dt>Tracks</dt><dd className="track-mini">
-            <span className="trk trk-complete" title="Planning · complete">P</span>
-            <span className="trk trk-complete" title="Scheduled · complete">S</span>
-            <span className="trk trk-blocked" title="COI · blocked">C</span>
-            <span className="trk trk-active" title="Deployment · active">D</span>
-            <span className="trk trk-idle" title="Live · not started">L</span>
-          </dd>
-          <dt>Owner</dt><dd>Implementation · Priya S.</dd>
-          <dt>Next action</dt><dd>Sign COI rev. 3</dd>
-          <dt>Due</dt><dd className="mono">May 6 <span className="muted-tx">· +5d</span></dd>
-          <dt>Risk</dt><dd><Dot tone="yellow" /> Medium</dd>
-          <dt>Go-live</dt><dd className="mono">May 18, 2026</dd>
-          <dt>Last activity</dt><dd className="mono">3m ago</dd>
-        </dl>
+        {store ? (
+          <dl className="kv">
+            <dt>Phase</dt><dd className="mono">{store.phase||"—"}</dd>
+            <dt>Owner</dt><dd>{store.ownerPerson||store.owner||"—"}</dd>
+            <dt>Next action</dt><dd>{store.nextAction||"—"}</dd>
+            <dt>Due</dt><dd className="mono">{store.due||"—"} {store.dueDelta && <span className="muted-tx">· {store.dueDelta}</span>}</dd>
+            <dt>Risk</dt><dd><Dot tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"} /> {store.risk?.charAt(0).toUpperCase()+store.risk?.slice(1)||"Low"}</dd>
+            <dt>Go-live</dt><dd className="mono">{store.scheduledLive||"—"}</dd>
+            <dt>Region</dt><dd>{store.region||"—"}</dd>
+          </dl>
+        ) : <p className="muted-tx" style={{fontSize:"var(--t12)",padding:"0 0 8px"}}>No store selected</p>}
       </section>
 
       <section className="rail-section">
@@ -3094,6 +3116,9 @@ const SB = (() => {
     async getBlockers(storeId) {
       return req(`/blockers?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.desc`);
     },
+    async getAllTasks() { return req(`/tasks?order=created_at.desc&limit=500`); },
+    async getAllFlags() { return req(`/flags?resolved=eq.false&order=created_at.desc&limit=500`); },
+    async getAllBlockers() { return req(`/blockers?resolved=eq.false&order=created_at.desc&limit=500`); },
     async insertBlocker(row) {
       const rows = await req("/blockers", { method: "POST", body: row });
       return Array.isArray(rows) ? rows[0] : rows;
@@ -3189,7 +3214,8 @@ function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast })
     setNoteText("");
     if (!SB.configured()) return;
     try {
-      await SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: activeUserRef.current, body: optimistic.body });
+      const tn = await SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: optimistic.who, body: optimistic.body });
+      if (tn?.id) setNotes((ns) => ns.map((n) => n===optimistic ? {...optimistic, id: tn.id} : n));
     } catch (e) { flashToast("Note sync failed: " + e.message, true); }
   };
 
@@ -3794,7 +3820,7 @@ function WelcomeDashboard({ stores, onSelectStore, onAddStore, onImportCSV }) {
 // ============================================================
 // GLOBAL TASKS VIEW — sortable list of all tasks
 // ============================================================
-function GlobalTasksView({ tasks, onStateChange, storeId, flashToast }) {
+function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=[], onSelectStore }) {
   const [sortTeam, setSortTeam]   = useState("all");
   const [sortState, setSortState] = useState("all");
   const [activeTask, setActiveTask] = useState(null);
@@ -3841,13 +3867,14 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast }) {
             <span className="mono task-id">{t.id}</span>
             <div>
               <div style={{fontSize:"var(--t13)",color:"var(--fg)"}}>{t.title}</div>
-              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{t.owner} · due {t.due}</div>
+              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{t.owner} · due {t.due} {t.store_id && <span className="mono" style={{color:"var(--accent)"}}>{t.store_id}</span>}</div>
             </div>
             {t.flag && <Pill tone="blocker">blocker</Pill>}
             <Pill tone={t.state==="Done"?"info":t.state==="Waiting"?"watch":"info"}>{t.state}</Pill>
             <div style={{display:"flex",gap:4}} onClick={(e)=>e.stopPropagation()}>
               {t.state !== "Done" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>Done</button>}
               {t.state === "Done" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>Reopen</button>}
+              {t.store_id && onSelectStore && (() => { const s = allStores.find(x=>x.id===t.store_id); return s ? <button className="btn ghost sm" onClick={() => onSelectStore(s)}>Open store</button> : null; })()}
             </div>
           </div>
         ))}
@@ -3862,7 +3889,7 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast }) {
 // ============================================================
 // GLOBAL FLAGS VIEW
 // ============================================================
-function GlobalFlagsView({ flags, onResolve }) {
+function GlobalFlagsView({ flags, onResolve, allStores=[], onSelectStore }) {
   const [sortTeam, setSortTeam] = useState("all");
   const teams = ["all", ...new Set(flags.map((f) => f.team).filter(Boolean))];
   const filtered = sortTeam === "all" ? flags : flags.filter((f) => f.team === sortTeam);
@@ -3896,9 +3923,10 @@ function GlobalFlagsView({ flags, onResolve }) {
             <Dot tone={f.tone} />
             <div>
               <div style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)"}}>{f.label}</div>
-              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{f.team} · {f.since}</div>
+              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{f.team} · {f.since} {f.store_id && <span className="mono" style={{color:"var(--accent)"}}>{f.store_id}</span>}</div>
             </div>
             <Pill tone={f.tone}>{f.tone}</Pill>
+            {f.store_id && onSelectStore && (() => { const s = allStores.find(x=>x.id===f.store_id); return s ? <button className="btn ghost sm" onClick={() => onSelectStore(s)}>Open store</button> : null; })()}
             <button className="btn ghost sm" onClick={() => onResolve && onResolve(f.id)}>Resolve</button>
           </div>
         ))}
@@ -3928,15 +3956,16 @@ function GlobalBlockersView({ blockers, onAdd, onResolve, storeId, flashToast })
 // STORE EDIT MODAL
 // ============================================================
 function StoreEditModal({ store, open, onClose, onSave }) {
-  const [form, setForm] = useState(store);
-  useEffect(() => { if (open) setForm(store); }, [open]);
+  const blank = { id:"",retailer:"",storeNum:"",name:"",address:"",region:"",phase:"Planning",health:"green",owner:"Implementation",ownerPerson:"",nextAction:"",due:"",sqft:"",scheduledLive:"",risk:"low" };
+  const [form, setForm] = useState(blank);
+  useEffect(() => { if (open && store) setForm(store); }, [open, store]);
   useEffect(() => {
     if (!open) return;
     const h = (e) => { if (e.key==="Escape") onClose(); };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [open, onClose]);
-  if (!open) return null;
+  if (!open || !store) return null;
   const set = (k, v) => setForm((f) => ({...f, [k]: v}));
   return (
     <div className="ai-modal-scrim" onMouseDown={onClose}>
@@ -4363,6 +4392,9 @@ function App() {
   const [liveFiles,  setLiveFiles]  = useState([]);
   const [liveTeam,   setLiveTeam]   = useState(TEAM);
   const [blockers,   setBlockers]   = useState([]);
+  const [allStoreTasks,    setAllStoreTasks]    = useState([]);
+  const [allStoreFlags,    setAllStoreFlags]    = useState([]);
+  const [allStoreBlockers, setAllStoreBlockers] = useState([]);
   const [storeData,  setStoreData]  = useState(null);
   const [allStores,  setAllStores]  = useState([]);
 
@@ -4389,9 +4421,12 @@ function App() {
       return;
     }
     setLoading(true);
-    SB.listStores()
-      .then((dbStores) => {
-        if (dbStores?.length) setAllStores(dbStores.map(rowToStore));
+    Promise.all([SB.listStores(), SB.getAllTasks(), SB.getAllFlags(), SB.getAllBlockers()])
+      .then(([dbStores, dbAllTasks, dbAllFlags, dbAllBlockers]) => {
+        if (dbStores?.length)      setAllStores(dbStores.map(rowToStore));
+        if (dbAllTasks?.length)    setAllStoreTasks(dbAllTasks.map(dbRowToTask).map(t=>({...t, store_id: dbAllTasks[dbAllTasks.findIndex(r=>r.id===t.id)]?.store_id})));
+        if (dbAllFlags?.length)    setAllStoreFlags(dbAllFlags.map(dbRowToFlag).map((f,i)=>({...f, store_id: dbAllFlags[i]?.store_id})));
+        if (dbAllBlockers?.length) setAllStoreBlockers(dbAllBlockers.map(dbRowToBlocker).map((b,i)=>({...b, store_id: dbAllBlockers[i]?.store_id})));
       })
       .catch((e) => setDbError(e.message))
       .finally(() => setLoading(false));
@@ -4740,7 +4775,8 @@ function App() {
         {isStoreView && (
           <StoreHeader store={storeData} tweaks={tweaks}
             onNewNote={goToNotes} onFlag={() => setFlagOpen(true)}
-            onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)} />
+            onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)}
+            onShowAll={() => { setActiveStoreId(null); activeStoreIdRef.current=null; setStoreData(null); setNavView("store"); }} />
         )}
         {isStoreView && <TabBar active={tab} onSelect={setTab} counts={{
   timeline: entries.length,
@@ -4767,9 +4803,9 @@ function App() {
             )}
 
             {/* Global nav views */}
-            {navView === "tasks"    && <GlobalTasksView tasks={liveTasks} onStateChange={updateTaskState} storeId={activeStoreId} flashToast={flashToast} />}
-            {navView === "flags"    && <GlobalFlagsView flags={liveFlags} onResolve={resolveFlag} />}
-            {navView === "blockers" && <GlobalBlockersView blockers={blockers} onAdd={addBlocker} onResolve={resolveBlocker} storeId={activeStoreId} flashToast={flashToast} />}
+            {navView === "tasks"    && <GlobalTasksView tasks={SB.configured() ? allStoreTasks : liveTasks} onStateChange={updateTaskState} storeId={activeStoreId} flashToast={flashToast} allStores={allStores} onSelectStore={selectStore} />}
+            {navView === "flags"    && <GlobalFlagsView flags={SB.configured() ? allStoreFlags : liveFlags} onResolve={resolveFlag} allStores={allStores} onSelectStore={selectStore} />}
+            {navView === "blockers" && <GlobalBlockersView blockers={SB.configured() ? allStoreBlockers : blockers} onAdd={addBlocker} onResolve={resolveBlocker} storeId={activeStoreId} flashToast={flashToast} allStores={allStores} onSelectStore={selectStore} />}
 
             {/* Store tabs */}
             {isStoreView && tab === "overview"  && <Overview store={storeData} onSaveStore={saveStore} flags={liveFlags} tasks={liveTasks} />}
@@ -4787,7 +4823,7 @@ function App() {
           {tweaks.showRail && isStoreView && (
             <div style={{display:"flex",flexShrink:0,width:"var(--rail-w)",position:"relative"}}>
               <div className="resize-handle resize-handle-left" onMouseDown={startRailResize} />
-              <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} tasks={liveTasks} blockers={blockers} onTaskClick={null} />
+              <RightRail onAskAI={() => setAiOpen(true)} flags={liveFlags} onFlag={() => setFlagOpen(true)} team={liveTeam} onEditTeam={() => setTeamOpen(true)} tasks={liveTasks} blockers={blockers} store={storeData} />
             </div>
           )}
         </div>

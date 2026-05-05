@@ -3468,41 +3468,57 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
             <button className="btn primary" type="submit" disabled={!newTitle.trim()}><Icon.plus /> Add task</button>
           </form>
 
-          <div className="task-cols">
+          <div style={{display:"flex",flexDirection:"column",gap:2,border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",background:"var(--bg-elev)"}}>
             {cols.map((c) => {
               const items = filtered.filter((t) => t.state === c.id);
+              if (items.length === 0) return null;
               return (
-                <div key={c.id} className="task-col">
-                  <div className="task-col-head">
-                    <Dot tone={c.tone === "ok" ? "green" : c.tone === "watch" ? "yellow" : "neutral"} />
-                    <span>{c.id}</span>
-                    <span className="mono task-col-n">{items.length}</span>
+                <div key={c.id}>
+                  {/* Group header */}
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 14px",background:"var(--panel)",borderBottom:"1px solid var(--border)"}}>
+                    <Dot tone={c.tone==="ok"?"green":c.tone==="watch"?"yellow":"neutral"} />
+                    <span style={{fontSize:"var(--t12)",fontWeight:600,color:"var(--fg-2)",textTransform:"uppercase",letterSpacing:".04em"}}>{c.id}</span>
+                    <span className="mono" style={{fontSize:"var(--t11)",color:"var(--muted-fg)"}}>{items.length}</span>
                   </div>
-                  {items.map((t) => (
-                    <div key={t.id} className={cx("task-card", t.flag === "blocker" && "is-blocker")}
-                      onClick={() => setActiveTask(t)} style={{cursor:"pointer"}}>
-                      <div className="task-card-top">
-                        <span className="mono task-id">{t.id}</span>
-                        {t.flag && <Pill tone="blocker">blocker</Pill>}
+                  {/* Task rows */}
+                  {items.map((t, idx) => (
+                    <div key={t.id}
+                      className={cx(t.flag==="blocker" && "is-blocker")}
+                      onClick={() => setActiveTask(t)}
+                      style={{
+                        display:"flex",alignItems:"center",gap:12,
+                        padding:"10px 14px",cursor:"pointer",
+                        borderBottom: idx < items.length-1 ? "1px solid var(--border)" : "none",
+                        background:"var(--bg)",transition:"background .1s",
+                      }}
+                      onMouseEnter={(e)=>e.currentTarget.style.background="var(--hover)"}
+                      onMouseLeave={(e)=>e.currentTarget.style.background="var(--bg)"}>
+                      <span className="mono" style={{fontSize:"var(--t11)",color:"var(--muted-fg)",flexShrink:0,width:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.id}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:500,fontSize:"var(--t13)",color:"var(--fg)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+                        <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginTop:2,display:"flex",alignItems:"center",gap:6}}>
+                          <span className="avatar avatar-xs mono" style={{flexShrink:0}}>{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
+                          <span>{t.owner||"Unassigned"}</span>
+                          {t.due && t.due!=="—" && <><span>·</span><span className="mono">due {t.due}</span></>}
+                        </div>
                       </div>
-                      <div className="task-card-title">{t.title}</div>
-                      <div className="task-card-foot">
-                        <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map((s)=>s[0]).join("")}</span>
-                        <span className="muted-tx">{t.owner}</span>
-                        <div className="grow" />
-                        <span className="mono">{t.due}</span>
-                      </div>
-                      <div className="task-card-actions" onClick={(e) => e.stopPropagation()}>
-                        {c.id !== "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>Open</button>}
-                        {c.id !== "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Waiting")}>Waiting</button>}
-                        {c.id !== "Done"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>Done</button>}
-                        <button className="btn ghost sm" onClick={() => setActiveTask(t)}><Icon.paper /> Notes</button>
+                      {t.flag && <Pill tone="blocker" style={{flexShrink:0}}>blocker</Pill>}
+                      <div style={{display:"flex",gap:4,flexShrink:0}} onClick={(e)=>e.stopPropagation()}>
+                        {c.id!=="Open"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Open")}>Open</button>}
+                        {c.id!=="Waiting" && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Waiting")}>Waiting</button>}
+                        {c.id!=="Done"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Done")}>Done</button>}
+                        <button className="btn ghost sm" onClick={()=>setActiveTask(t)}><Icon.paper /> Notes</button>
                       </div>
                     </div>
                   ))}
                 </div>
               );
             })}
+            {filtered.length === 0 && (
+              <div style={{padding:"32px 14px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t13)"}}>
+                No tasks yet. Add one above.
+              </div>
+            )}
           </div>
         </>
       )}
@@ -3849,20 +3865,22 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=
         {filtered.length === 0 && <div className="drawer-empty">No tasks match this filter.</div>}
         {filtered.map((t, i) => (
           <div key={t.id} style={{
-            display:"grid",gridTemplateColumns:"60px 1fr auto auto auto",
-            alignItems:"center",gap:10,
-            padding:"8px var(--pad-3)",
+            display:"flex",alignItems:"center",gap:12,
+            padding:"10px 16px",
             borderBottom: i < filtered.length-1 ? "1px solid var(--border)" : "none",
             cursor:"pointer",
           }} onClick={() => setActiveTask(t)}>
-            <span className="mono task-id">{t.id}</span>
-            <div>
-              <div style={{fontSize:"var(--t13)",color:"var(--fg)"}}>{t.title}</div>
-              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)"}}>{t.owner} · due {t.due} {t.store_id && <span className="mono" style={{color:"var(--accent)"}}>{t.store_id}</span>}</div>
+            <span className="mono task-id" style={{flexShrink:0,width:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.id}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:"var(--t13)",color:"var(--fg)",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+              <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",marginTop:2}}>
+                {t.owner} {t.due && t.due!=="—" ? `· due ${t.due}` : ""}
+                {t.store_id && <span className="mono" style={{color:"var(--accent)",marginLeft:6}}>{t.store_id}</span>}
+              </div>
             </div>
-            {t.flag && <Pill tone="blocker">blocker</Pill>}
-            <Pill tone={t.state==="Done"?"info":t.state==="Waiting"?"watch":"info"}>{t.state}</Pill>
-            <div style={{display:"flex",gap:4}} onClick={(e)=>e.stopPropagation()}>
+            {t.flag && <Pill tone="blocker" style={{flexShrink:0}}>blocker</Pill>}
+            <Pill tone={t.state==="Done"?"info":t.state==="Waiting"?"watch":"info"} style={{flexShrink:0}}>{t.state}</Pill>
+            <div style={{display:"flex",gap:4,flexShrink:0}} onClick={(e)=>e.stopPropagation()}>
               {t.state !== "Done" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>Done</button>}
               {t.state === "Done" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>Reopen</button>}
               {t.store_id && onSelectStore && (() => { const s = allStores.find(x=>x.id===t.store_id); return s ? <button className="btn ghost sm" onClick={() => onSelectStore(s)}>Open store</button> : null; })()}
@@ -4648,12 +4666,12 @@ function App() {
       SB.getTeam(s.id),
       SB.getBlockers(s.id),
     ]).then(([dbEntries, dbTasks, dbFlags, dbFiles, dbTeam, dbBlockers]) => {
-      if (dbEntries?.length) setEntries(dbEntries.map(dbRowToEntry)); else setEntries(TIMELINE);
-      if (dbTasks?.length)   setLiveTasks(dbTasks.map(dbRowToTask));  else setLiveTasks([]);
-      if (dbFlags?.length)   setLiveFlags(dbFlags.map(dbRowToFlag));  else setLiveFlags([]);
-      if (dbFiles?.length)   setLiveFiles(dbFiles.map(dbRowToFile));  else setLiveFiles([]);
-      if (dbTeam?.length)    setLiveTeam(dbTeam.map((r) => ({name:r.name,role:r.role,team:r.team,load:r.load,initials:r.initials,since:r.since})));
-      if (dbBlockers?.length) setBlockers(dbBlockers.map(dbRowToBlocker)); else setBlockers([]);
+      setEntries(dbEntries?.length ? dbEntries.map(dbRowToEntry) : []);
+      setLiveTasks(dbTasks?.length   ? dbTasks.map(dbRowToTask)   : []);
+      setLiveFlags(dbFlags?.length   ? dbFlags.map(dbRowToFlag)   : []);
+      setLiveFiles(dbFiles?.length   ? dbFiles.map(dbRowToFile)   : []);
+      setBlockers(dbBlockers?.length ? dbBlockers.map(dbRowToBlocker) : []);
+      if (dbTeam?.length) setLiveTeam(dbTeam.map((r) => ({name:r.name,role:r.role,team:r.team,load:r.load,initials:r.initials,since:r.since})));
     }).catch((e) => setDbError(e.message))
       .finally(() => setLoading(false));
   };

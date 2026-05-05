@@ -1925,9 +1925,9 @@ const SB = (() => {
     async getBlockers(storeId) {
       return req(`/blockers?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.desc`);
     },
-    async getAllTasks() { return req(`/tasks?order=created_at.desc&limit=500`); },
-    async getAllFlags() { return req(`/flags?resolved=eq.false&order=created_at.desc&limit=500`); },
-    async getAllBlockers() { return req(`/blockers?resolved=eq.false&order=created_at.desc&limit=500`); },
+    async getAllTasks() { return req(`/tasks?state=neq.Done&order=created_at.desc&limit=1000`); },
+    async getAllFlags() { return req(`/flags?resolved=eq.false&order=created_at.desc&limit=1000`); },
+    async getAllBlockers() { return req(`/blockers?resolved=eq.false&order=created_at.desc&limit=1000`); },
     async insertBlocker(row) {
       const rows = await req("/blockers", { method: "POST", body: row });
       return Array.isArray(rows) ? rows[0] : rows;
@@ -1960,14 +1960,14 @@ function dbRowToEntry(r) {
     due: r.due, mentions: r.mentions, attachment: r.attachment };
 }
 function dbRowToTask(r) {
-  return { id: r.id, title: r.title, state: r.state, owner: r.owner, due: r.due, flag: r.flag };
+  return { id: r.id, title: r.title, state: r.state, owner: r.owner, due: r.due, flag: r.flag, store_id: r.store_id };
 }
 function dbRowToFlag(r) {
-  return { id: r.id, label: r.label, tone: r.tone, team: r.team, since: r.since || "—" };
+  return { id: r.id, label: r.label, tone: r.tone, team: r.team, since: r.since || "—", store_id: r.store_id };
 }
 function dbRowToBlocker(r) {
   return { id: r.id, title: r.title, description: r.description, tone: r.tone,
-    team: r.team, taskId: r.task_id, resolved: r.resolved };
+    team: r.team, taskId: r.task_id, resolved: r.resolved, store_id: r.store_id };
 }
 function rowToStore(r) {
   return {
@@ -3409,9 +3409,9 @@ function App() {
     Promise.all([SB.listStores(), SB.getAllTasks(), SB.getAllFlags(), SB.getAllBlockers(), SB.getTeam(null)])
       .then(([dbStores, dbAllTasks, dbAllFlags, dbAllBlockers, dbTeam]) => {
         if (dbStores?.length)      setAllStores(dbStores.map(rowToStore));
-        if (dbAllTasks?.length)    setAllStoreTasks(dbAllTasks.map(dbRowToTask).map(t=>({...t, store_id: dbAllTasks[dbAllTasks.findIndex(r=>r.id===t.id)]?.store_id})));
-        if (dbAllFlags?.length)    setAllStoreFlags(dbAllFlags.map(dbRowToFlag).map((f,i)=>({...f, store_id: dbAllFlags[i]?.store_id})));
-        if (dbAllBlockers?.length) setAllStoreBlockers(dbAllBlockers.map(dbRowToBlocker).map((b,i)=>({...b, store_id: dbAllBlockers[i]?.store_id})));
+        if (dbAllTasks?.length)    setAllStoreTasks(dbAllTasks.map(dbRowToTask));
+        if (dbAllFlags?.length)    setAllStoreFlags(dbAllFlags.map(dbRowToFlag));
+        if (dbAllBlockers?.length) setAllStoreBlockers(dbAllBlockers.map(dbRowToBlocker));
         if (dbTeam?.length)        setLiveTeam(dbTeam.map((r) => ({
           name:r.name, role:r.role, team:r.team, load:r.load, initials:r.initials, since:r.since
         })));

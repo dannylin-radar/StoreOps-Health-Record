@@ -3503,7 +3503,7 @@ function App() {
     try {
       await Promise.all([
         SB.insertTask({ id, store_id:activeStoreIdRef.current, title:taskData.title,
-          state:"Open", owner:taskData.owner||"", due:taskData.due||"—", flag:taskData.flag||null })
+          state:"Open", owner:taskData.owner||"", due:taskData.due||"—", flag:taskData.flag||null }),
         SB.insertEntry({
           store_id: activeStoreIdRef.current, t, who: entry.who,
           team: entry.team, kind: "task", sev: "info",

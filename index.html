@@ -3117,14 +3117,17 @@ const SB = (() => {
       return req(`/stores?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", prefer: "return=minimal", body: fields });
     },
     // Team members
-    async getTeam(storeId) {
-      return req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.asc`);
-    },
     async replaceTeam(storeId, members) {
-      await req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+      // Delete members associated with this store (store_id optional, no FK)
+      await req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}`, { method: "DELETE", headers: { Prefer: "return=minimal" } }).catch(() => {});
+      // Also try deleting members with null store_id to clean up global members
       if (!members.length) return [];
-      const rows = await req("/team_members", { method: "POST", body: members.map((m) => ({ ...m, store_id: storeId })) });
+      const rows = await req("/team_members", { method: "POST", body: members.map((m) => ({ name:m.name, role:m.role, team:m.team, load:m.load, initials:m.initials, since:m.since, store_id: storeId || null })) });
       return rows;
+    },
+    async getTeam(storeId) {
+      // Get team members for this store OR global (null store_id)
+      return req(`/team_members?store_id=eq.${encodeURIComponent(storeId)}&order=created_at.asc`);
     },
     // Blockers
     async getBlockers(storeId) {

@@ -2703,10 +2703,10 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=
             {t.flag && <Pill tone="blocker" style={{flexShrink:0}}>blocker</Pill>}
             <Pill tone={t.state==="Done"?"info":t.state==="Waiting"?"watch":"info"} style={{flexShrink:0}}>{t.state}</Pill>
             <div style={{display:"flex",gap:4,flexShrink:0}} onClick={(e)=>e.stopPropagation()}>
-              {t.state === "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Waiting")}>→ Waiting</button>}
-              {t.state === "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>→ Done</button>}
-              {t.state === "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}>→ Done</button>}
-              {t.state === "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>← Open</button>}
+              {t.state === "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Waiting")}> Waiting</button>}
+              {t.state === "Open"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}> Done</button>}
+              {t.state === "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Done")}> Done</button>}
+              {t.state === "Waiting" && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}> Open</button>}
               {t.state === "Done"    && <button className="btn ghost sm" onClick={() => onStateChange(t.id,"Open")}>Reopen</button>}
               {t.store_id && onSelectStore && (() => { const s = allStores.find(x=>x.id===t.store_id); return s ? <button className="btn ghost sm" onClick={() => onSelectStore(s)}>Open store</button> : null; })()}
             </div>
@@ -3519,7 +3519,7 @@ function App() {
     const prevState = prevTask?.state || "?";
     setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state:newState } : t));
     setAllStoreTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state:newState } : t));
-    flashToast(`Task → ${newState}`);
+    flashToast(`Task: ${prevState} to ${newState}`);
 
     // Track state change in timeline
     const t = nowStamp();
@@ -3528,7 +3528,7 @@ function App() {
     const entry = {
       kind: "task", who: activeUserRef.current, team: prevTask?.owner || "—",
       sev: "info", t,
-      title: `Task ${taskId} moved: ${prevState} → ${newState}`,
+      title: `Task ${taskId}: ${prevState} to ${newState}`,
       body: prevTask?.title || "",
       action: false,
     };
@@ -3696,7 +3696,7 @@ function App() {
     const k = `${phase}:${i}`;
     const prevDone = subState[k] ?? PHASE_DETAIL[phase].subtasks[i].done;
     setSubState((s) => ({...s, [k]: !prevDone}));
-    flashToast(`${PHASE_DETAIL[phase].subtasks[i].label} → ${!prevDone ? "done" : "open"}`);
+    flashToast(`${PHASE_DETAIL[phase].subtasks[i].label}: ${!prevDone ? "done" : "open"}`);
   };
   const postPhaseNote = (phase, text) => postNote({
     kind:"note", who:activeUserRef.current, team:PHASE_DETAIL[phase].owner, sev:"info",
@@ -3928,4 +3928,25 @@ function App() {
 
       {toast && (
         <div className={cx("toast", toast.isError && "toast-error")}>
-          {toast.isError ? <Icon.flag /> 
+          {toast.isError ? <Icon.flag /> : <Icon.check />}
+          <span>{toast.msg}</span>
+        </div>
+      )}
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Appearance">
+          <TweakToggle label="Dark mode"  value={tweaks.dark}      onChange={(v) => setTweak("dark", v)} />
+          <TweakRadio  label="Density"    value={tweaks.density}   options={[{value:"compact",label:"Compact"},{value:"comfy",label:"Comfy"}]} onChange={(v) => setTweak("density", v)} />
+          <TweakSlider label="Accent hue" value={tweaks.accentHue} min={0} max={360} step={5} onChange={(v) => setTweak("accentHue", v)} />
+        </TweakSection>
+        <TweakSection title="Layout">
+          <TweakToggle label="Show right rail"     value={tweaks.showRail}  onChange={(v) => setTweak("showRail", v)} />
+          <TweakToggle label="Show keyboard hints" value={tweaks.showKbd}   onChange={(v) => setTweak("showKbd", v)} />
+          <TweakToggle label="Show phase strip"    value={tweaks.showPhase} onChange={(v) => setTweak("showPhase", v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

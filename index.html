@@ -3231,7 +3231,15 @@ function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast, a
     setNoteText("");
     if (!SB.configured()) return;
     try {
-      const tn = await SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: optimistic.who, body: optimistic.body });
+      const [tn] = await Promise.all([
+        SB.insertTaskNote({ task_id: task.id, store_id: storeId, who: optimistic.who, body: optimistic.body }),
+        SB.insertEntry({
+          store_id: storeId, t, who: optimistic.who,
+          team: "—", kind: "task", sev: "info",
+          title: `Note on task ${task.id}: ${optimistic.body.slice(0,80)}${optimistic.body.length>80?"…":""}`,
+          body: task.title, action: false,
+        }),
+      ]);
       if (tn?.id) setNotes((ns) => ns.map((n) => n===optimistic ? {...optimistic, id: tn.id} : n));
     } catch (e) { flashToast("Note sync failed: " + e.message, true); }
   };
@@ -4496,20 +4504,60 @@ function App() {
     const newTask = { id, state:"Open", ...taskData };
     setLiveTasks((ts) => [newTask, ...ts]);
     flashToast("Task created");
+
+    // Track creation in timeline
+    const t = nowStamp();
+    const entry = {
+      kind: "task", who: activeUserRef.current, team: taskData.owner || "—",
+      sev: "info", t,
+      title: `Task created: ${taskData.title}`,
+      body: taskData.due && taskData.due !== "—" ? `Due ${taskData.due}${taskData.owner ? ` · assigned to ${taskData.owner}` : ""}` : taskData.owner ? `Assigned to ${taskData.owner}` : "",
+      action: !!taskData.flag,
+    };
+    setEntries((es) => [entry, ...es]);
+
     if (!SB.configured()) return;
     try {
-      await SB.insertTask({ id, store_id:activeStoreIdRef.current, title:taskData.title,
-        state:"Open", owner:taskData.owner||"", due:taskData.due||"—", flag:taskData.flag||null });
+      await Promise.all([
+        SB.insertTask({ id, store_id:activeStoreIdRef.current, title:taskData.title,
+          state:"Open", owner:taskData.owner||"", due:taskData.due||"—", flag:taskData.flag||null }),
+        SB.insertEntry({
+          store_id: activeStoreIdRef.current, t, who: entry.who,
+          team: entry.team, kind: "task", sev: "info",
+          title: entry.title, body: entry.body, action: entry.action,
+        }),
+      ]);
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 
   // ── Update task state ────────────────────────────────────
   const updateTaskState = async (taskId, newState) => {
+    const prevTask = liveTasks.find((t) => t.id === taskId);
+    const prevState = prevTask?.state || "?";
     setLiveTasks((ts) => ts.map((t) => t.id === taskId ? { ...t, state:newState } : t));
     flashToast(`Task → ${newState}`);
+
+    // Track state change in timeline
+    const t = nowStamp();
+    const entry = {
+      kind: "task", who: activeUserRef.current, team: prevTask?.owner || "—",
+      sev: "info", t,
+      title: `Task ${taskId} moved: ${prevState} → ${newState}`,
+      body: prevTask?.title || "",
+      action: false,
+    };
+    setEntries((es) => [entry, ...es]);
+
     if (!SB.configured()) return;
     try {
-      await SB.patchTask(taskId, { state:newState, updated_at:new Date().toISOString() });
+      await Promise.all([
+        SB.patchTask(taskId, { state:newState, updated_at:new Date().toISOString() }),
+        SB.insertEntry({
+          store_id: activeStoreIdRef.current, t, who: entry.who,
+          team: entry.team, kind: "task", sev: "info",
+          title: entry.title, body: entry.body, action: false,
+        }),
+      ]);
     } catch (e) { flashToast("Sync failed: " + e.message, true); }
   };
 

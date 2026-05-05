@@ -1099,17 +1099,7 @@ button:focus-visible { outline-offset: 1px; }
 .toast-error svg { color: white; }
 
 /* ── RESIZE HANDLES ─────────────────────────────────────────── */
-.resize-handle {
-  position: absolute; top: 0; bottom: 0;
-  width: 6px; cursor: col-resize; z-index: 20;
-  background: transparent;
-  transition: background .15s;
 }
-.resize-handle:hover, .resize-handle:active {
-  background: color-mix(in oklab, var(--accent) 30%, transparent);
-}
-.resize-handle-right { right: -3px; }
-.resize-handle-left  { left:  -3px; }
 
 /* ── NAV SEARCH ─────────────────────────────────────────────── */
 .nav-search-wrap {
@@ -1218,8 +1208,7 @@ button:focus-visible { outline-offset: 1px; }
 .nav-store-delete { display: none; }
 .nav-item.nav-store:hover .nav-store-delete { display: inline-flex; }
 
-/* Remove resize handle styles */
-.resize-handle { display: none; }
+/* Resize handles are active */
 
 /* ── FULL SCREEN ──────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
@@ -1229,12 +1218,13 @@ html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 
 /* ── RESIZE HANDLES ──────────────────────────────────────── */
 .resize-handle {
-  position: absolute; top: 0; bottom: 0; width: 4px; z-index: 10;
+  position: absolute; top: 0; bottom: 0; width: 8px; z-index: 20;
   cursor: col-resize; background: transparent; transition: background .15s;
 }
-.resize-handle:hover, .resize-handle:active { background: var(--accent); }
-.resize-handle-right { right: 0; }
-.resize-handle-left  { left: 0; }
+.resize-handle:hover { background: color-mix(in oklab, var(--accent) 30%, transparent); }
+.resize-handle:active { background: var(--accent); }
+.resize-handle-right { right: -4px; }
+.resize-handle-left  { left: -4px; }
 
 /* ── WELCOME DASHBOARD ───────────────────────────────────── */
 .welcome-dash {
@@ -3179,7 +3169,7 @@ function dbRowToFile(r) {
 // TASK DETAIL DRAWER
 // Open a task, see its notes, add notes, edit blocker status
 // ============================================================
-function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast }) {
+function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast, activeUser }) {
   const [notes, setNotes]     = useState([]);
   const [noteText, setNoteText] = useState("");
   const [loading, setLoading]  = useState(false);
@@ -3209,7 +3199,7 @@ function TaskDrawer({ task, open, onClose, onStateChange, storeId, flashToast })
     if (!noteText.trim()) return;
     const now = new Date();
     const t   = `${now.toLocaleString("en-US",{month:"short",day:"numeric"})} · ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-    const optimistic = { id: Date.now(), who: activeUserRef.current, body: noteText.trim(), created_at: new Date().toISOString(), t };
+    const optimistic = { id: Date.now(), who: activeUser || "Me", body: noteText.trim(), created_at: new Date().toISOString(), t };
     setNotes((ns) => [optimistic, ...ns]);
     setNoteText("");
     if (!SB.configured()) return;
@@ -3420,7 +3410,7 @@ function BlockersPanel({ blockers, onAdd, onResolve, storeId, flashToast }) {
 // ============================================================
 // TASKS — full featured with drawer + blockers
 // ============================================================
-function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResolveBlocker, storeId, flashToast }) {
+function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResolveBlocker, storeId, flashToast, activeUser }) {
   const [newTitle, setNewTitle]   = useState("");
   const [newOwner, setNewOwner]   = useState("");
   const [newDue,   setNewDue]     = useState("");
@@ -3529,6 +3519,7 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
         onClose={() => setActiveTask(null)}
         onStateChange={onStateChange}
         storeId={storeId} flashToast={flashToast}
+        activeUser={activeUser}
       />
     </div>
   );
@@ -3881,7 +3872,7 @@ function GlobalTasksView({ tasks, onStateChange, storeId, flashToast, allStores=
       </div>
 
       <TaskDrawer task={activeTask} open={!!activeTask} onClose={() => setActiveTask(null)}
-        onStateChange={onStateChange} storeId={storeId} flashToast={flashToast} />
+        onStateChange={onStateChange} storeId={storeId} flashToast={flashToast} activeUser="Me" />
     </div>
   );
 }
@@ -4415,11 +4406,7 @@ function App() {
 
   // ── Load from Supabase ────────────────────────────────────
   useEffect(() => {
-    if (!SB.configured()) {
-      // No Supabase: seed with mock data for demo
-      setAllStores([STORE]);
-      return;
-    }
+    if (!SB.configured()) return; // no Supabase, start blank
     setLoading(true);
     Promise.all([SB.listStores(), SB.getAllTasks(), SB.getAllFlags(), SB.getAllBlockers()])
       .then(([dbStores, dbAllTasks, dbAllFlags, dbAllBlockers]) => {
@@ -4586,7 +4573,7 @@ function App() {
     setStoreData(newStore);
     setNavView("store");
     setTab("overview");
-    setEntries([]); setLiveTasks([]); setLiveFlags([]); setLiveFiles([]); setBlockers([]);
+    setEntries([]); setLiveTasks([]); setLiveFlags([]); setLiveFiles([]); setBlockers([]); setLiveTeam([]);
     flashToast(`Store ${newStore.id} added`);
     if (!SB.configured()) return;
     try {
@@ -4649,7 +4636,7 @@ function App() {
     setStoreData(s);
     setNavView("store");
     setTab("overview");
-    setEntries([]); setLiveTasks([]); setLiveFlags([]); setLiveFiles([]); setBlockers([]);
+    setEntries([]); setLiveTasks([]); setLiveFlags([]); setLiveFiles([]); setBlockers([]); setLiveTeam([]);
     // reload data for this store
     if (!SB.configured()) return;
     setLoading(true);
@@ -4814,7 +4801,7 @@ function App() {
             {isStoreView && tab === "tasks"     && (
               <Tasks tasks={liveTasks} onCreate={createTask} onStateChange={updateTaskState}
                 blockers={blockers} onAddBlocker={addBlocker} onResolveBlocker={resolveBlocker}
-                storeId={activeStoreId} flashToast={flashToast} />
+                storeId={activeStoreId} flashToast={flashToast} activeUser={activeUser} />
             )}
             {isStoreView && tab === "comms"     && <Comms />}
             {isStoreView && tab === "files"     && <Files files={liveFiles} onUpload={uploadFile} />}

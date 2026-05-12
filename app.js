@@ -2815,7 +2815,7 @@ function LeftNav({ stores=[], allTasks=[], allFlags=[], allBlockers=[], onAddSto
             <button className="nav-store-delete iconbtn xs"
               title="Delete store"
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(s.id); }}
-              style={{opacity:0,transition:"opacity .15s",color:"var(--bad)",flexShrink:0}}>×</button>
+              style={{flexShrink:0}}>×</button>
           </li>
         ))}
       </ul>

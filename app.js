@@ -693,117 +693,51 @@ const Icon = {
 };
 
 // ============================================================
-// HEADER HELPERS — vitals strip
+// HEADER — compact title row, inline stats, phase strip
 // ============================================================
-function daysUntil(dateStr) {
-  if (!dateStr) return null;
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d)) return null;
-    return Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
-  } catch { return null; }
-}
-
-function VitalsStrip({ store, tasks=[], flags=[], blockers=[] }) {
-  const goLiveDays   = daysUntil(store.scheduledLive);
-  const openTasks    = tasks.filter(t => t.state !== "Done").length;
-  const openBlockers = blockers.filter(b => !b.resolved).length;
-  const openFlags    = flags.filter(f => !f.resolved).length;
-
-  const healthCls = store.health === "red" ? "vital-urgent" : store.health === "yellow" ? "vital-warn" : "vital-ok";
-  const daysCls   = goLiveDays !== null ? (goLiveDays < 7 ? "vital-urgent" : goLiveDays < 21 ? "vital-warn" : "vital-ok") : "";
-
-  return (
-    <div className="vitals-strip">
-      <div className={`vital ${healthCls}`}>
-        <div className="vital-label">Health</div>
-        <div className="vital-value">
-          <span className={`health-badge health-badge-${store.health||"green"}`}>
-            <span style={{width:8,height:8,borderRadius:"50%",background:"currentColor",display:"inline-block"}} />
-            {store.health === "green" ? "Healthy" : store.health === "yellow" ? "Watch" : "Critical"}
-          </span>
-        </div>
-        <div className="vital-sub">{store.phase || "—"} phase</div>
-      </div>
-
-      <div className={`vital ${daysCls}`}>
-        <div className="vital-label">Go-Live</div>
-        <div className="vital-value vital-countdown">
-          {goLiveDays !== null ? (
-            <>
-              <span className="vital-countdown-n">{goLiveDays < 0 ? "—" : goLiveDays}</span>
-              <span className="vital-countdown-unit">{goLiveDays < 0 ? "overdue" : goLiveDays === 1 ? "day" : "days"}</span>
-            </>
-          ) : <span style={{fontSize:"var(--t14)"}}>—</span>}
-        </div>
-        <div className="vital-sub mono">{store.scheduledLive || "Not set"}</div>
-      </div>
-
-      <div className={`vital ${openBlockers > 0 ? "vital-urgent" : "vital-ok"}`}>
-        <div className="vital-label">Blockers</div>
-        <div className="vital-value">{openBlockers}</div>
-        <div className="vital-sub">{openBlockers === 0 ? "All clear" : `${openBlockers} open`}</div>
-      </div>
-
-      <div className={`vital ${openTasks > 5 ? "vital-warn" : "vital-ok"}`}>
-        <div className="vital-label">Open Tasks</div>
-        <div className="vital-value">{openTasks}</div>
-        <div className="vital-sub">{tasks.length} total</div>
-      </div>
-
-      <div className={`vital ${openFlags > 0 ? "vital-warn" : ""}`}>
-        <div className="vital-label">Flags</div>
-        <div className="vital-value">{openFlags}</div>
-        <div className="vital-sub">{openFlags === 0 ? "None active" : "Active"}</div>
-      </div>
-
-      <div className={`vital ${store.risk==="high"?"vital-urgent":store.risk==="medium"?"vital-warn":"vital-ok"}`}>
-        <div className="vital-label">Risk Level</div>
-        <div className="vital-value" style={{fontSize:"var(--t14)",textTransform:"capitalize"}}>
-          {store.risk || "Low"}
-        </div>
-        <div className="vital-sub">{store.ownerPerson || store.owner || "—"}</div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================
-// HEADER (breadcrumb, store id, vitals strip, track strip)
-// ============================================================
-function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit, onShowAll, tasks, flags, blockers, phaseTemplates, subState }) {
+function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit, onShowAll, phaseTemplates, subState }) {
   return (
     <header className="store-header">
+      {/* Breadcrumb + actions row */}
       <div className="crumbs">
         <span style={{cursor:"pointer",color:"var(--accent)"}} onClick={onShowAll}>Stores</span>
         <Icon.chevR />
         <span style={{cursor:"pointer",color:"var(--accent)"}} onClick={onShowAll}>{store.retailer}</span>
         <Icon.chevR />
         <span className="crumb-current mono">{store.id}</span>
-        <span className="crumb-tail">· {store.name}</span>
+        {store.name && <span className="crumb-tail">· {store.name}</span>}
         <div className="header-actions">
-          <button className="btn ghost" onClick={onEdit}><Icon.paper /> Edit</button>
+          <button className="btn ghost" onClick={onEdit}><Icon.paper /> Edit store</button>
           <button className="btn ghost" onClick={onFlag}><Icon.flag /> Flag <Kbd>F</Kbd></button>
+          <button className="btn ghost" onClick={() => {
+            try { navigator.clipboard.writeText(window.location.href); } catch {}
+          }}><Icon.link /> Copy link</button>
           <button className="btn primary" onClick={onNewNote}><Icon.plus /> New note <Kbd>N</Kbd></button>
         </div>
       </div>
 
-      <div className="store-header-top">
-        <h1 className="store-title-compact">{store.retailer} #{store.storeNum}</h1>
-        <div className="store-meta-row">
-          <span className="mono" style={{color:"var(--muted-fg)"}}>{store.id}</span>
-          <span style={{color:"var(--faint)"}}>·</span>
-          <span>{store.address}</span>
-          {store.region && <><span style={{color:"var(--faint)"}}>·</span><span>{store.region}</span></>}
+      {/* Title + inline metadata */}
+      <div className="store-title-row">
+        <div className="store-title-left">
+          <Dot tone={store.health || "neutral"} size={10} />
+          <h1 className="store-title">{store.retailer} #{store.storeNum}</h1>
+          <span className="store-sub mono">{store.id}</span>
+          <span className="addr-sep">·</span>
+          <span className="store-addr">{store.address}</span>
+        </div>
+        <div className="store-title-right">
+          {store.openedOn    && <span className="meta-stat"><span className="meta-k">Install Date</span> <span className="mono">{store.openedOn}</span></span>}
+          {store.scheduledLive && <span className="meta-stat"><span className="meta-k">Go-Live</span> <span className="mono">{store.scheduledLive}</span></span>}
+          {store.sqft        && <span className="meta-stat"><span className="meta-k">Sqft</span> <span className="mono">{store.sqft}</span></span>}
+          {store.region      && <span className="meta-stat"><span className="meta-k">Region</span> <span className="mono">{store.region}</span></span>}
         </div>
       </div>
-
-      <VitalsStrip store={store} tasks={tasks} flags={flags} blockers={blockers} />
 
       {tweaks.showPhase && (
         <PhaseStrip onSelect={onPhaseSelect} phaseTemplates={phaseTemplates} subState={subState} />
       )}
-    </header>);
+    </header>
+  );
 }
 
 function PhaseStrip({ onSelect, phaseTemplates, subState }) {
@@ -4213,7 +4147,6 @@ function App() {
             onNewNote={goToNotes} onFlag={() => setFlagOpen(true)}
             onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)}
             onShowAll={() => { setActiveStoreId(null); activeStoreIdRef.current=null; setStoreData(null); setNavView("store"); }}
-            tasks={liveTasks} flags={liveFlags} blockers={blockers}
             phaseTemplates={phaseTemplates} subState={subState} />
         )}
         {isStoreView && <TabBar active={tab} onSelect={setTab} counts={{

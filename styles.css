@@ -247,7 +247,7 @@ body {
 /* MAIN */
 .main {
   display: flex; flex-direction: column;
-  min-width: 0; min-height: 0; overflow: hidden;
+  flex: 1; min-width: 0; min-height: 0; overflow: hidden;
   background: var(--bg);
 }
 
@@ -439,6 +439,7 @@ body {
   flex: 1; min-height: 0; overflow: hidden;
 }
 .content-main {
+  flex: 1;
   overflow-y: auto;
   padding: var(--pad-4) var(--pad-4) 80px;
   min-width: 0;
@@ -558,11 +559,14 @@ body {
 .check-row.is-done .check-label { color: var(--muted-fg); }
 .check-num { color: var(--faint); font-size: var(--t12); }
 .check-box {
-  width: 14px; height: 14px; border: 1px solid var(--border-strong);
-  border-radius: 3px; background: var(--bg);
+  width: 15px; height: 15px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 3px; background: var(--bg-elev);
   display: inline-flex; align-items: center; justify-content: center;
-  color: white;
+  color: white; flex-shrink: 0;
+  transition: border-color .1s, background .1s;
 }
+.check-box:hover { border-color: var(--accent); }
 .check-box.is-on { background: var(--accent); border-color: var(--accent); }
 
 /* TIMELINE */
@@ -1164,8 +1168,9 @@ button:focus-visible { outline-offset: 1px; }
 }
 
 /* CHECKLIST — editable */
-.checklist-editable .check-box { cursor: pointer; border: 0; background: transparent; padding: 0; }
-.checklist-editable .check-box.is-on { background: var(--accent); border-radius: 3px; border: 1px solid var(--accent); }
+.checklist-editable .check-box { cursor: pointer; border: 1.5px solid var(--border-strong); background: var(--bg-elev); }
+.checklist-editable .check-box:hover { border-color: var(--accent); }
+.checklist-editable .check-box.is-on { background: var(--accent); border-radius: 3px; border: 1.5px solid var(--accent); }
 .checklist-new-input {
   flex: 1; border: 1px solid var(--accent); border-radius: var(--radius);
   height: 24px; padding: 0 8px; font: inherit; font-size: var(--t13);
@@ -1195,8 +1200,15 @@ button:focus-visible { outline-offset: 1px; }
 
 /* NAV STORE — ID only, no name */
 .nav-item.nav-store { padding-right: 6px; }
-.nav-store-delete { display: none; }
-.nav-item.nav-store:hover .nav-store-delete { display: inline-flex; }
+.nav-store-delete {
+  display: inline-flex;
+  opacity: 0.3;
+  transition: opacity .15s, color .15s;
+}
+.nav-item.nav-store:hover .nav-store-delete {
+  opacity: 1;
+  color: var(--bad);
+}
 
 /* Resize handles are active */
 
@@ -1306,363 +1318,3 @@ html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 [data-theme="dark"] .date-picker-input::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
-
-/* ============================================================
-   STOREOPS UX IMPROVEMENTS — Medical Record Theme
-   ============================================================ */
-
-/* ── VITALS STRIP ─────────────────────────────────────────── */
-.vitals-strip {
-  display: flex; gap: 0;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-elev); overflow: hidden;
-  margin: 0 0 10px;
-  flex-wrap: wrap;
-}
-.vital {
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 10px 16px;
-  border-right: 1px solid var(--border);
-  flex: 1; min-width: 100px;
-}
-.vital:last-child { border-right: 0; }
-.vital-label {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted-fg);
-}
-.vital-value {
-  font-size: var(--t18); font-weight: 600; letter-spacing: -0.015em;
-  display: flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono);
-}
-.vital-sub { font-size: var(--t12); color: var(--muted-fg); }
-.vital-urgent .vital-value { color: var(--bad); }
-.vital-warn .vital-value   { color: oklch(0.5 0.12 75); }
-.vital-ok .vital-value     { color: var(--ok); }
-.vital-countdown { 
-  display: flex; align-items: baseline; gap: 4px;
-}
-.vital-countdown-n { font-size: var(--t22); font-weight: 700; }
-.vital-countdown-unit { font-size: var(--t12); color: var(--muted-fg); font-family: var(--font-ui); font-weight: 400; }
-
-/* Health badge — larger, labeled */
-.health-badge {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 4px 12px 4px 8px; border-radius: 4px;
-  font-size: var(--t13); font-weight: 600;
-  border: 1.5px solid;
-}
-.health-badge-green {
-  background: var(--ok-soft); color: oklch(0.38 0.12 155);
-  border-color: color-mix(in oklab, var(--ok) 35%, var(--border));
-}
-.health-badge-yellow {
-  background: var(--warn-soft); color: oklch(0.42 0.12 75);
-  border-color: color-mix(in oklab, var(--warn) 35%, var(--border));
-}
-.health-badge-red {
-  background: var(--bad-soft); color: var(--bad);
-  border-color: color-mix(in oklab, var(--bad) 35%, var(--border));
-  animation: pulse-border 2s infinite;
-}
-@keyframes pulse-border {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--bad) 30%, transparent); }
-  50%       { box-shadow: 0 0 0 3px color-mix(in oklab, var(--bad) 10%, transparent); }
-}
-[data-theme="dark"] .health-badge-yellow { color: oklch(0.85 0.15 75); }
-[data-theme="dark"] .health-badge-green  { color: oklch(0.75 0.14 155); }
-
-/* ── PINNED NOTE (Chief Complaint) ──────────────────────────── */
-.pinned-note {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 10px var(--pad-3);
-  background: color-mix(in oklab, var(--warn) 8%, var(--bg));
-  border: 1px solid color-mix(in oklab, var(--warn) 30%, var(--border));
-  border-radius: var(--radius);
-  margin: 0 0 4px;
-}
-.pinned-note-icon {
-  flex-shrink: 0; color: oklch(0.5 0.12 75); margin-top: 1px;
-}
-.pinned-note-icon svg { width: 14px; height: 14px; }
-.pinned-note-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; color: oklch(0.5 0.12 75); margin-bottom: 2px;
-}
-.pinned-note-text {
-  font-size: var(--t13); color: var(--fg); line-height: 1.45;
-}
-.pinned-note-meta {
-  font-size: var(--t12); color: var(--muted-fg); margin-top: 3px;
-}
-.pinned-note-edit {
-  margin-left: auto; flex-shrink: 0;
-}
-.pinned-note.is-blocker {
-  background: color-mix(in oklab, var(--bad) 6%, var(--bg));
-  border-color: color-mix(in oklab, var(--bad) 30%, var(--border));
-}
-.pinned-note.is-blocker .pinned-note-icon { color: var(--bad); }
-.pinned-note.is-blocker .pinned-note-label { color: var(--bad); }
-.pinned-note-set-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px var(--pad-3);
-  border: 1px dashed var(--border-2); border-radius: var(--radius);
-  color: var(--muted-fg); font-size: var(--t12);
-  cursor: pointer; background: transparent; font: inherit;
-  margin-bottom: 4px; width: 100%;
-}
-.pinned-note-set-btn:hover { border-color: var(--accent); color: var(--accent-fg); background: var(--accent-soft); }
-
-/* ── STORE PROFILE (collapsed static section) ──────────────── */
-.store-profile-card {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-elev); overflow: hidden;
-}
-.store-profile-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px var(--pad-3); cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  font-size: var(--t12); font-weight: 600; color: var(--fg-2);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  user-select: none;
-}
-.store-profile-head:hover { background: var(--hover); }
-.store-profile-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 0; border-top: 0;
-}
-.store-profile-item {
-  padding: 10px var(--pad-3); border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  display: flex; flex-direction: column; gap: 2px;
-}
-.store-profile-item:nth-child(4n) { border-right: 0; }
-.store-profile-item:nth-last-child(-n+4) { border-bottom: 0; }
-.store-profile-key { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted-fg); }
-.store-profile-val { font-size: var(--t13); color: var(--fg); font-family: var(--font-mono); }
-
-/* ── ACTIVE STATUS GRID (replaces old snap-grid top section) ── */
-.active-status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-elev); overflow: hidden;
-}
-.status-snap {
-  padding: 12px var(--pad-3);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  display: flex; flex-direction: column; gap: 4px; min-width: 0;
-  cursor: pointer; transition: background .1s;
-}
-.status-snap:hover { background: var(--hover); }
-.status-snap:hover .snap-edit-hint { opacity: 1; }
-.status-snap:nth-child(3n) { border-right: 0; }
-.status-snap:nth-child(n+4) { border-bottom: 0; }
-.status-snap-wide { grid-column: span 2; }
-
-/* ── TIMELINE DATE GROUPS ──────────────────────────────────── */
-.tl-date-group { display: flex; flex-direction: column; }
-.tl-date-sep {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 0 6px;
-  font-size: var(--t12); font-weight: 600; color: var(--muted-fg);
-  letter-spacing: 0.04em;
-  position: sticky; top: 0; background: var(--bg); z-index: 2;
-}
-.tl-date-sep::before, .tl-date-sep::after {
-  content: ""; flex: 1; height: 1px; background: var(--border);
-}
-.tl-date-label { white-space: nowrap; padding: 0 4px; }
-
-/* ── TASK SWIMLANES (treatment plan view) ──────────────────── */
-.task-view-toggle {
-  display: flex; gap: 2px; border: 1px solid var(--border-2);
-  border-radius: var(--radius); overflow: hidden;
-}
-.task-view-btn {
-  display: flex; align-items: center; gap: 5px;
-  height: 26px; padding: 0 10px;
-  background: var(--bg); color: var(--fg-2);
-  border: 0; border-right: 1px solid var(--border-2);
-  font: inherit; font-size: var(--t12); cursor: pointer;
-}
-.task-view-btn:last-child { border-right: 0; }
-.task-view-btn:hover { background: var(--hover); color: var(--fg); }
-.task-view-btn.is-on { background: var(--active); color: var(--accent-fg); font-weight: 500; }
-
-.swimlanes { display: flex; flex-direction: column; gap: 2px; }
-.swimlane {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-elev); overflow: hidden;
-}
-.swimlane-head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px var(--pad-3);
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  cursor: pointer; user-select: none;
-}
-.swimlane-head:hover { background: var(--hover); }
-.swimlane-phase-name { font-size: var(--t13); font-weight: 600; color: var(--fg); }
-.swimlane-meta { font-size: var(--t12); color: var(--muted-fg); }
-.swimlane-blocked { border-left: 3px solid var(--bad); }
-.swimlane-blocked .swimlane-head { background: color-mix(in oklab, var(--bad) 5%, var(--panel)); }
-.swimlane-items { display: flex; flex-direction: column; }
-.swimlane-task {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px var(--pad-3);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--t13);
-  cursor: pointer; transition: background .1s;
-}
-.swimlane-task:last-child { border-bottom: 0; }
-.swimlane-task:hover { background: var(--hover); }
-.swimlane-task.is-done { opacity: 0.55; }
-.swimlane-task.is-blocker { background: color-mix(in oklab, var(--bad) 4%, var(--bg)); }
-.swimlane-task-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.swimlane-task.is-done .swimlane-task-title { text-decoration: line-through; color: var(--muted-fg); }
-
-/* ── TEAM WORKLOAD in right rail ──────────────────────────── */
-.team-workload-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 4px; border-bottom: 1px dashed var(--border);
-}
-.team-workload-row:last-child { border-bottom: 0; }
-.team-member-info { flex: 1; min-width: 0; }
-.team-member-name { font-size: var(--t13); color: var(--fg); }
-.team-member-sub  { font-size: var(--t12); color: var(--muted-fg); }
-.team-task-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 20px; height: 18px; padding: 0 5px;
-  border-radius: 9px; font-size: 10.5px; font-family: var(--font-mono);
-  font-weight: 600;
-}
-.task-count-active { background: var(--warn-soft); color: oklch(0.42 0.12 75); border: 1px solid color-mix(in oklab, var(--warn) 25%, var(--border)); }
-.task-count-clear  { background: var(--ok-soft);   color: oklch(0.38 0.12 155); border: 1px solid color-mix(in oklab, var(--ok) 25%, var(--border)); }
-.task-count-overdue { background: var(--bad-soft); color: var(--bad); border: 1px solid color-mix(in oklab, var(--bad) 25%, var(--border)); }
-[data-theme="dark"] .task-count-active { color: oklch(0.85 0.15 75); }
-
-/* ── COMPLETION / LIVE BANNER ─────────────────────────────── */
-.completion-banner {
-  display: flex; align-items: center; gap: 14px;
-  padding: var(--pad-3) var(--pad-4);
-  background: linear-gradient(135deg, var(--ok-soft) 0%, color-mix(in oklab, var(--accent-soft) 50%, var(--ok-soft)) 100%);
-  border: 1px solid color-mix(in oklab, var(--ok) 30%, var(--border));
-  border-radius: var(--radius-lg); overflow: hidden;
-  position: relative;
-}
-.completion-banner::before {
-  content: ""; position: absolute; inset: 0;
-  background: repeating-linear-gradient(
-    -45deg, transparent 0 8px,
-    color-mix(in oklab, var(--ok) 6%, transparent) 8px 9px
-  );
-  pointer-events: none;
-}
-.completion-banner-icon { font-size: 24px; position: relative; }
-.completion-banner-body { flex: 1; position: relative; }
-.completion-banner-title { font-size: var(--t16); font-weight: 700; color: oklch(0.38 0.12 155); margin: 0 0 2px; }
-.completion-banner-sub   { font-size: var(--t13); color: oklch(0.45 0.08 155); margin: 0; }
-.completion-banner-stats { display: flex; gap: 14px; position: relative; }
-.completion-stat { display: flex; flex-direction: column; gap: 2px; }
-.completion-stat-n { font-size: var(--t18); font-weight: 700; font-family: var(--font-mono); color: oklch(0.38 0.12 155); }
-.completion-stat-l { font-size: var(--t12); color: oklch(0.45 0.08 155); }
-
-/* ── TAB ALERT BADGE ─────────────────────────────────────── */
-.tab-alert {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: 8px; font-size: 10px;
-  font-family: var(--font-mono); font-weight: 700;
-}
-.tab-alert-blocker { background: var(--bad); color: white; }
-.tab-alert-watch   { background: var(--warn); color: white; }
-
-/* ── PHASE STRIP IMPROVEMENTS ──────────────────────────────── */
-.phase-seg.is-active.is-blocked {
-  background: color-mix(in oklab, var(--bad) 6%, transparent);
-  border-radius: 3px;
-}
-.phase-seg.is-active.is-blocked .phase-label { color: var(--bad); font-weight: 600; }
-
-/* ── STORE HEADER IMPROVEMENT ──────────────────────────────── */
-.store-header-top {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 0;
-  flex-wrap: wrap;
-}
-.store-title-compact { 
-  margin: 0; font-size: var(--t18); font-weight: 700; letter-spacing: -0.015em;
-}
-.store-meta-row {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  font-size: var(--t12); color: var(--muted-fg);
-}
-
-/* ── LOADING BAR ────────────────────────────────────────────── */
-.loading-bar {
-  height: 2px; background: var(--border); border-radius: 1px;
-  overflow: hidden; position: relative;
-}
-.loading-bar::after {
-  content: ""; position: absolute; left: -40%; width: 40%; height: 100%;
-  background: var(--accent);
-  animation: loadbar 1.2s ease infinite;
-}
-@keyframes loadbar { to { left: 140%; } }
-
-/* ── CONFIG BANNER ──────────────────────────────────────────── */
-.config-banner {
-  background: var(--warn-soft); color: oklch(0.42 0.12 75);
-  border-bottom: 1px solid color-mix(in oklab, var(--warn) 30%, var(--border));
-  padding: 6px var(--pad-4); font-size: var(--t12);
-}
-.config-banner-error {
-  background: var(--bad-soft); color: var(--bad);
-  border-bottom-color: color-mix(in oklab, var(--bad) 30%, var(--border));
-}
-
-/* ── BLOCKERS CARD ───────────────────────────────────────────── */
-.blocker-card {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-elev); padding: 10px var(--pad-3);
-}
-.blocker-card-blocker {
-  border-left: 3px solid var(--bad);
-  background: color-mix(in oklab, var(--bad) 3%, var(--bg-elev));
-}
-.blocker-card-watch {
-  border-left: 3px solid var(--warn);
-}
-
-/* ── NAV STORE HEALTH BAR ──────────────────────────────────── */
-.nav-store-health-bar {
-  width: 3px; height: 16px; border-radius: 1.5px; flex-shrink: 0;
-}
-.nav-store-health-bar-green  { background: var(--ok); }
-.nav-store-health-bar-yellow { background: var(--warn); }
-.nav-store-health-bar-red    { background: var(--bad); }
-
-/* ── OVERVIEW SECTION DIVIDER ──────────────────────────────── */
-.overview-section-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 0 8px;
-  border-bottom: 1px solid var(--border); margin-bottom: 12px;
-}
-.overview-section-title {
-  font-size: var(--t12); font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted-fg);
-}
-
-/* ── PHASE DRAWER ITEM ACTIONS ───────────────────────────── */
-.drawer-checklist .check-row:hover .drawer-item-actions { opacity: 1 !important; }
-.drawer-item-actions { transition: opacity .15s; }
-.drawer-checklist .check-row {
-  grid-template-columns: 18px 28px 1fr auto auto auto;
-}
-
-/* ── NAV SORT TOGGLE ─────────────────────────────────────── */
-.nav-count-blocker { color: var(--bad) !important; font-weight: 700; }

@@ -1,4 +1,3 @@
-
 // tweaks-panel.jsx
 // Reusable Tweaks shell + form-control helpers.
 //
@@ -680,9 +679,89 @@ const Icon = {
 // LEFT NAV
 // ============================================================
 // ============================================================
-// HEADER (breadcrumb, store id, track strip, snapshot row)
+// HEADER (breadcrumb, store id, vitals strip, track strip)
 // ============================================================
-function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit, onShowAll }) {
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    const diff = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+    return diff;
+  } catch { return null; }
+}
+
+function VitalsStrip({ store, tasks=[], flags=[], blockers=[] }) {
+  const goLiveDays = daysUntil(store.scheduledLive);
+  const openTasks  = tasks.filter(t => t.state !== "Done").length;
+  const openBlockers = blockers.filter(b => !b.resolved).length;
+  const openFlags  = flags.filter(f => !f.resolved).length;
+  const lastEntry  = null; // placeholder
+
+  const healthClass = store.health === "red" ? "vital-urgent" : store.health === "yellow" ? "vital-warn" : "vital-ok";
+
+  return (
+    <div className="vitals-strip">
+      {/* Health status */}
+      <div className={`vital ${healthClass}`}>
+        <div className="vital-label">Health</div>
+        <div className="vital-value">
+          <span className={`health-badge health-badge-${store.health||"green"}`}>
+            <span style={{width:8,height:8,borderRadius:"50%",background:"currentColor",display:"inline-block"}} />
+            {store.health === "green" ? "Healthy" : store.health === "yellow" ? "Watch" : "Critical"}
+          </span>
+        </div>
+        <div className="vital-sub">{store.phase || "—"} phase</div>
+      </div>
+
+      {/* Days to go-live */}
+      <div className={`vital ${goLiveDays !== null ? (goLiveDays < 7 ? "vital-urgent" : goLiveDays < 21 ? "vital-warn" : "vital-ok") : ""}`}>
+        <div className="vital-label">Go-Live</div>
+        <div className="vital-value vital-countdown">
+          {goLiveDays !== null ? (
+            <>
+              <span className="vital-countdown-n">{goLiveDays < 0 ? "—" : goLiveDays}</span>
+              <span className="vital-countdown-unit">{goLiveDays < 0 ? "overdue" : goLiveDays === 1 ? "day" : "days"}</span>
+            </>
+          ) : <span style={{fontSize:"var(--t14)"}}>—</span>}
+        </div>
+        <div className="vital-sub mono">{store.scheduledLive || "Not set"}</div>
+      </div>
+
+      {/* Open blockers */}
+      <div className={`vital ${openBlockers > 0 ? "vital-urgent" : "vital-ok"}`}>
+        <div className="vital-label">Blockers</div>
+        <div className="vital-value">{openBlockers}</div>
+        <div className="vital-sub">{openBlockers === 0 ? "All clear" : `${openBlockers} need${openBlockers===1?"s":""} resolution`}</div>
+      </div>
+
+      {/* Open tasks */}
+      <div className={`vital ${openTasks > 5 ? "vital-warn" : "vital-ok"}`}>
+        <div className="vital-label">Open Tasks</div>
+        <div className="vital-value">{openTasks}</div>
+        <div className="vital-sub">{tasks.length} total</div>
+      </div>
+
+      {/* Flags */}
+      <div className={`vital ${openFlags > 0 ? "vital-warn" : ""}`}>
+        <div className="vital-label">Flags</div>
+        <div className="vital-value">{openFlags}</div>
+        <div className="vital-sub">{openFlags === 0 ? "None active" : "Active flags"}</div>
+      </div>
+
+      {/* Risk */}
+      <div className={`vital ${store.risk==="high"?"vital-urgent":store.risk==="medium"?"vital-warn":"vital-ok"}`}>
+        <div className="vital-label">Risk Level</div>
+        <div className="vital-value" style={{fontSize:"var(--t14)",textTransform:"capitalize"}}>
+          {store.risk || "Low"}
+        </div>
+        <div className="vital-sub">Owner: {store.ownerPerson || store.owner || "—"}</div>
+      </div>
+    </div>
+  );
+}
+
+function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, onEdit, onShowAll, tasks, flags, blockers }) {
   return (
     <header className="store-header">
       <div className="crumbs">
@@ -693,28 +772,23 @@ function StoreHeader({ store = STORE, tweaks, onNewNote, onFlag, onPhaseSelect, 
         <span className="crumb-current mono">{store.id}</span>
         <span className="crumb-tail">· {store.name}</span>
         <div className="header-actions">
-          <button className="btn ghost" onClick={onEdit}><Icon.paper /> Edit store</button>
+          <button className="btn ghost" onClick={onEdit}><Icon.paper /> Edit</button>
           <button className="btn ghost" onClick={onFlag}><Icon.flag /> Flag <Kbd>F</Kbd></button>
-          <button className="btn ghost"><Icon.link /> Copy link</button>
           <button className="btn primary" onClick={onNewNote}><Icon.plus /> New note <Kbd>N</Kbd></button>
         </div>
       </div>
 
-      <div className="store-title-row">
-        <div className="store-title-left">
-          <Dot tone={store.health} size={10} />
-          <h1 className="store-title">{store.retailer} #{store.storeNum}</h1>
-          <span className="store-sub mono">{store.id}</span>
-          <span className="addr-sep">·</span>
-          <span className="store-addr">{store.address}</span>
-        </div>
-        <div className="store-title-right">
-          <span className="meta-stat"><span className="meta-k">INSTALL DATE</span> <span className="mono">{store.openedOn}</span></span>
-          <span className="meta-stat"><span className="meta-k">GO-LIVE</span> <span className="mono">{store.scheduledLive}</span></span>
-          <span className="meta-stat"><span className="meta-k">Sqft</span> <span className="mono">{store.sqft}</span></span>
-          <span className="meta-stat"><span className="meta-k">Region</span> <span className="mono">{store.region}</span></span>
+      <div className="store-header-top">
+        <h1 className="store-title-compact">{store.retailer} #{store.storeNum}</h1>
+        <div className="store-meta-row">
+          <span className="mono" style={{color:"var(--muted-fg)"}}>{store.id}</span>
+          <span style={{color:"var(--faint)"}}>·</span>
+          <span>{store.address}</span>
+          {store.region && <><span style={{color:"var(--faint)"}}>·</span><span>{store.region}</span></>}
         </div>
       </div>
+
+      <VitalsStrip store={store} tasks={tasks} flags={flags} blockers={blockers} />
 
       {tweaks.showPhase && <PhaseStrip onSelect={onPhaseSelect} />}
     </header>);
@@ -913,17 +987,28 @@ const TAB_DEFS = [
   { id:"audit",    label:"Audit",    k:"7" },
 ];
 
-function TabBar({ active, onSelect, counts = {} }) {
+function TabBar({ active, onSelect, counts = {}, tasks = [], flags = [] }) {
+  const blockerTaskCount = tasks.filter(t => t.flag === "blocker" && t.state !== "Done").length;
+  const blockerFlagCount = flags.filter(f => f.tone === "blocker" && !f.resolved).length;
+
   return (
     <div className="tabs">
-      {TAB_DEFS.map((t) =>
-        <button key={t.id} className={cx("tab", active===t.id && "is-active")} onClick={() => onSelect(t.id)}>
-          {t.label}
-          {counts[t.id] != null && counts[t.id] > 0 && (
-            <span className="tab-count mono">{counts[t.id]}</span>
-          )}
-        </button>
-      )}
+      {TAB_DEFS.map((t) => {
+        const hasBlocker = (t.id === "tasks" && blockerTaskCount > 0) || (t.id === "overview" && blockerFlagCount > 0);
+        const hasWatch   = t.id === "tasks" && !hasBlocker && tasks.filter(ts => ts.state === "Waiting").length > 0;
+        return (
+          <button key={t.id} className={cx("tab", active===t.id && "is-active")} onClick={() => onSelect(t.id)}>
+            {t.label}
+            {hasBlocker ? (
+              <span className="tab-alert tab-alert-blocker">{t.id === "tasks" ? blockerTaskCount : blockerFlagCount}</span>
+            ) : hasWatch ? (
+              <span className="tab-alert tab-alert-watch">{tasks.filter(ts=>ts.state==="Waiting").length}</span>
+            ) : counts[t.id] != null && counts[t.id] > 0 ? (
+              <span className="tab-count mono">{counts[t.id]}</span>
+            ) : null}
+          </button>
+        );
+      })}
       <div className="tabs-spacer" />
       <div className="tabs-search">
         <Icon.search />
@@ -961,12 +1046,76 @@ function saveChecklistDone(storeId, done) {
 }
 
 // ============================================================
+// PINNED NOTE (Chief Complaint)
+// ============================================================
+function PinnedNote({ store, entries=[], onSaveStore }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState("");
+
+  // Find the most recent blocker/watch note as default pin candidate
+  const lastUrgent = entries.find(e => e.kind === "note" && (e.sev === "blocker" || e.sev === "watch"));
+  const pinned = store.pinnedNote || (lastUrgent ? lastUrgent.title : null);
+  const pinnedSev = store.pinnedNoteSev || (lastUrgent?.sev) || "watch";
+
+  const save = () => {
+    if (!text.trim()) return;
+    onSaveStore && onSaveStore({ ...store, pinnedNote: text.trim(), pinnedNoteSev: "watch" });
+    setEditing(false);
+  };
+  const clear = () => {
+    onSaveStore && onSaveStore({ ...store, pinnedNote: "", pinnedNoteSev: "" });
+  };
+
+  if (editing) {
+    return (
+      <div className="pinned-note">
+        <div className="pinned-note-icon"><Icon.flag /></div>
+        <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
+          <div className="pinned-note-label">Chief Concern</div>
+          <input autoFocus className="snap-edit-input" value={text} onChange={e=>setText(e.target.value)}
+            placeholder="Describe the current critical context for this store…"
+            onKeyDown={e=>{if(e.key==="Enter")save();if(e.key==="Escape")setEditing(false);}} />
+          <div style={{display:"flex",gap:6}}>
+            <button className="btn primary sm" onClick={save} disabled={!text.trim()}><Icon.check /> Pin</button>
+            <button className="btn ghost sm" onClick={()=>setEditing(false)}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!pinned) {
+    return (
+      <button className="pinned-note-set-btn" onClick={()=>{setText("");setEditing(true);}}>
+        <Icon.flag /> <span>Pin a chief concern for this store…</span>
+        <span className="muted-tx" style={{marginLeft:"auto",fontSize:"var(--t12)"}}>click to set</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className={`pinned-note ${pinnedSev === "blocker" ? "is-blocker" : ""}`}>
+      <div className="pinned-note-icon"><Icon.flag /></div>
+      <div style={{flex:1,minWidth:0}}>
+        <div className="pinned-note-label">Chief Concern</div>
+        <div className="pinned-note-text">{pinned}</div>
+        <div className="pinned-note-meta">Pinned · {store.nextAction ? `Next: ${store.nextAction}` : store.due ? `Due ${store.due}` : ""}</div>
+      </div>
+      <div className="pinned-note-edit" style={{display:"flex",gap:4,flexShrink:0}}>
+        <button className="btn ghost sm" onClick={()=>{setText(pinned);setEditing(true);}}>Edit</button>
+        <button className="btn ghost sm" onClick={clear} title="Clear pin" style={{color:"var(--muted-fg)"}}>✕</button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // OVERVIEW (snapshot blocks) — editable fields
 // ============================================================
-function Overview({ store = STORE, onSaveStore }) {
-  // Editable snap fields
-  const [editField, setEditField] = useState(null); // which field is being edited
+function Overview({ store = STORE, onSaveStore, flags=[], tasks=[] }) {
+  const [editField, setEditField] = useState(null);
   const [editVal, setEditVal]     = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Checklist
   const [checkItems, setCheckItems] = useState(getChecklistItems);
@@ -980,44 +1129,39 @@ function Overview({ store = STORE, onSaveStore }) {
   const saveField = (field, directVal) => {
     const val = directVal !== undefined ? directVal : editVal.trim();
     if (onSaveStore) onSaveStore({ ...store, [field]: val });
-    setEditField(null);
-    setEditVal("");
+    setEditField(null); setEditVal("");
   };
   const cancelEdit = () => setEditField(null);
 
   const toggleCheck = (i) => {
     const next = { ...checkDone, [i]: !checkDone[i] };
-    setCheckDone(next);
-    saveChecklistDone(store.id, next);
+    setCheckDone(next); saveChecklistDone(store.id, next);
   };
   const addCheckItem = () => {
     if (!newItem.trim()) return;
     const next = [...checkItems, newItem.trim()];
-    setCheckItems(next);
-    saveChecklistItems(next);
+    setCheckItems(next); saveChecklistItems(next);
     setNewItem(""); setAddingItem(false);
   };
   const removeCheckItem = (i) => {
     const next = checkItems.filter((_, idx) => idx !== i);
-    setCheckItems(next);
-    saveChecklistItems(next);
-    const nextDone = { ...checkDone };
-    delete nextDone[i];
-    // re-index done state
+    setCheckItems(next); saveChecklistItems(next);
     const reindexed = {};
-    next.forEach((_, newIdx) => {
-      const oldIdx = checkItems.indexOf(next[newIdx]);
-      if (checkDone[oldIdx]) reindexed[newIdx] = true;
-    });
-    setCheckDone(reindexed);
-    saveChecklistDone(store.id, reindexed);
+    next.forEach((_, newIdx) => { const oldIdx = checkItems.indexOf(next[newIdx]); if (checkDone[oldIdx]) reindexed[newIdx] = true; });
+    setCheckDone(reindexed); saveChecklistDone(store.id, reindexed);
   };
+
+  // Check if store is "Live" and all tasks done → show completion banner
+  const isLive = store.phase === "Live";
+  const openTasks = tasks.filter(t => t.state !== "Done").length;
+  const openBlockers = flags.filter(f => !f.resolved && f.tone === "blocker").length;
+  const showCompletion = isLive && openTasks === 0 && openBlockers === 0;
 
   const EditableSnap = ({ label, field, value, sub, tone, wide, mono, multiLine, type="text", options=[] }) => {
     const isEditing = editField === field;
     const rawVal = store[field] || "";
     return (
-      <div className={cx("snap snap-editable", wide && "snap-wide")} onClick={() => !isEditing && startEdit(field, rawVal)}>
+      <div className={cx("status-snap", wide && "status-snap-wide")} onClick={() => !isEditing && startEdit(field, rawVal)}>
         <div className="snap-label">{label}</div>
         {isEditing ? (
           <div className="snap-edit-form" onClick={(e) => e.stopPropagation()}>
@@ -1065,26 +1209,95 @@ function Overview({ store = STORE, onSaveStore }) {
     );
   };
 
-
   return (
     <div className="overview">
-      <div className="snap-grid">
-        <EditableSnap label="Phase" field="phase" value={store.phase} sub={`Health: ${store.health}`} tone={store.health==="yellow"?"yellow":store.health==="red"?"red":"green"}
-          type="select" options={["Planning","Scheduled","COI","Deployment","Live"]} />
-        <EditableSnap label="Health" field="health" value={store.health?.charAt(0).toUpperCase()+store.health?.slice(1)} sub="Select health status" tone={store.health}
-          type="select" options={["green","yellow","red"]} />
-        <EditableSnap label="Owner" field="ownerPerson" value={store.ownerPerson||"—"} sub={store.owner||""}
-          type="select" options={TEAMS.map(t=>t.id)} optionLabel="Team" secondField="owner" secondOptions={TEAMS.map(t=>t.id)} />
-        <EditableSnap label="Next action" field="nextAction" value={store.nextAction||"No action set"} sub={store.due ? `Due ${store.due}` : "No due date"} tone={store.nextAction?"yellow":null} wide multiLine />
-        <EditableSnap label="Risk level" field="risk" value={store.risk?.charAt(0).toUpperCase()+store.risk?.slice(1)||"Low"} sub="Click to change"
-          tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"}
-          type="select" options={["low","medium","high"]} />
-        <EditableSnap label="Go-live target" field="scheduledLive" value={store.scheduledLive||"Not set"} sub={store.openedOn?`Opened ${store.openedOn}`:""} mono type="date" />
+
+      {/* Chief Concern / Pinned Note */}
+      <PinnedNote store={store} onSaveStore={onSaveStore} />
+
+      {/* Completion banner if store is live and clean */}
+      {showCompletion && (
+        <div className="completion-banner">
+          <div className="completion-banner-icon">✅</div>
+          <div className="completion-banner-body">
+            <p className="completion-banner-title">Store is Live — All Clear</p>
+            <p className="completion-banner-sub">No open tasks or blockers. Handoff to retail ops complete.</p>
+          </div>
+          <div className="completion-banner-stats">
+            <div className="completion-stat">
+              <span className="completion-stat-n">{tasks.filter(t=>t.state==="Done").length}</span>
+              <span className="completion-stat-l">Tasks done</span>
+            </div>
+            <div className="completion-stat">
+              <span className="completion-stat-n">{tasks.length}</span>
+              <span className="completion-stat-l">Total tasks</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Status — the "live clinical state" */}
+      <div>
+        <div className="overview-section-head">
+          <span className="overview-section-title">Active Status</span>
+          <span className="muted-tx" style={{fontSize:"var(--t12)"}}>Click any field to edit</span>
+        </div>
+        <div className="active-status-grid">
+          <EditableSnap label="Phase" field="phase" value={store.phase} sub={`Health: ${store.health}`}
+            tone={store.health==="yellow"?"yellow":store.health==="red"?"red":"green"}
+            type="select" options={["Planning","Scheduled","COI","Deployment","Live"]} />
+          <EditableSnap label="Health" field="health" value={store.health?.charAt(0).toUpperCase()+store.health?.slice(1)} sub="Select health status" tone={store.health}
+            type="select" options={["green","yellow","red"]} />
+          <EditableSnap label="Owner" field="ownerPerson" value={store.ownerPerson||"—"} sub={store.owner||""}
+            type="select" options={TEAMS.map(t=>t.id)} optionLabel="Team" secondField="owner" secondOptions={TEAMS.map(t=>t.id)} />
+          <EditableSnap label="Next Action" field="nextAction" value={store.nextAction||"No action set"}
+            sub={store.due ? `Due ${store.due}` : "No due date"} tone={store.nextAction?"yellow":null} wide multiLine />
+          <EditableSnap label="Risk Level" field="risk" value={store.risk?.charAt(0).toUpperCase()+store.risk?.slice(1)||"Low"} sub="Click to change"
+            tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"}
+            type="select" options={["low","medium","high"]} />
+          <EditableSnap label="Go-Live Target" field="scheduledLive" value={store.scheduledLive||"Not set"} sub={store.openedOn?`Opened ${store.openedOn}`:""} mono type="date" />
+        </div>
       </div>
 
+      {/* Store Profile — static intake info, collapsible */}
+      <div className="store-profile-card">
+        <div className="store-profile-head" onClick={() => setProfileOpen(o => !o)}>
+          <Icon.paper />
+          <span>Store Profile</span>
+          <span className="muted-tx" style={{marginLeft:6,fontWeight:400,textTransform:"none",letterSpacing:0}}>
+            {store.address}
+          </span>
+          <div style={{marginLeft:"auto"}}>
+            <Icon.chev />
+          </div>
+        </div>
+        {profileOpen && (
+          <div className="store-profile-grid">
+            {[
+              ["Store ID",    store.id,           true],
+              ["Retailer",    store.retailer,      false],
+              ["Store #",     store.storeNum,      true],
+              ["Region",      store.region,        false],
+              ["Address",     store.address,       false],
+              ["Sq Ft",       store.sqft,          true],
+              ["Fixtures",    store.fixtureCount,  true],
+              ["SKUs",        store.skus,          true],
+              ["Opened On",   store.openedOn,      true],
+              ["Retailer Code", store.retailerCode, true],
+            ].filter(([,v]) => v).map(([k, v, mono]) => (
+              <div key={k} className="store-profile-item">
+                <div className="store-profile-key">{k}</div>
+                <div className={cx("store-profile-val", !mono && "store-profile-val-text")} style={!mono?{fontFamily:"inherit"}:{}}>{v || "—"}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Readiness Checklist */}
       <section className="block">
         <header className="block-head">
-          <h3>Readiness checklist</h3>
+          <h3>Readiness Checklist</h3>
           <span className="block-meta mono">{doneCount}/{checkItems.length} complete</span>
         </header>
         <ul className="checklist">
@@ -1150,14 +1363,32 @@ function BlockerRow({ num, title, who, age, tone }) {
 }
 
 // ============================================================
-// TIMELINE
+// TIMELINE — with date groups
 // ============================================================
+function groupByDate(entries) {
+  const groups = [];
+  const seen = {};
+  entries.forEach(e => {
+    // Extract date portion from timestamp string e.g. "Apr 30 · 14:22" → "Apr 30"
+    const dateKey = (e.t || "").split("·")[0].trim() || "Unknown date";
+    if (!seen[dateKey]) { seen[dateKey] = true; groups.push({ date: dateKey, items: [] }); }
+    groups[groups.length - 1].items.push(e);
+  });
+  // Re-group properly (entries may not be perfectly sorted by date string)
+  const map = {};
+  entries.forEach(e => {
+    const dateKey = (e.t || "").split("·")[0].trim() || "Unknown date";
+    if (!map[dateKey]) map[dateKey] = [];
+    map[dateKey].push(e);
+  });
+  return Object.entries(map).map(([date, items]) => ({ date, items }));
+}
+
 function Timeline({ entries, onEdit, onDelete }) {
   const [filter, setFilter] = useState("all");
   const [teamFilter, setTeamFilter] = useState("all");
   const [actionOnly, setActionOnly] = useState(false);
 
-  // All teams that appear in entries
   const teams = ["all", ...new Set(entries.map(e => e.team).filter(Boolean).filter(t => t !== "—"))];
 
   const filters = [
@@ -1168,10 +1399,12 @@ function Timeline({ entries, onEdit, onDelete }) {
     { id: "status", label: "Status", n: entries.filter((e) => e.kind === "status").length },
   ];
 
-  const list = entries
+  const filtered = entries
     .filter((e) => filter === "all" || e.kind === filter)
     .filter((e) => teamFilter === "all" || e.team === teamFilter)
     .filter((e) => !actionOnly || e.action);
+
+  const groups = groupByDate(filtered);
 
   return (
     <div className="timeline-wrap">
@@ -1182,25 +1415,38 @@ function Timeline({ entries, onEdit, onDelete }) {
           </button>
         )}
         <div className="grow" />
-        {/* Team filter */}
         {teams.length > 1 && (
           <select className="select-ish mono" style={{height:26,fontSize:"var(--t12)"}}
             value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)}>
             {teams.map(t => <option key={t} value={t}>{t === "all" ? "All teams" : t}</option>)}
           </select>
         )}
-        {/* Action required filter */}
         <label style={{display:"flex",alignItems:"center",gap:5,fontSize:"var(--t12)",color:"var(--fg-2)",cursor:"pointer",whiteSpace:"nowrap"}}>
           <input type="checkbox" checked={actionOnly} onChange={e => setActionOnly(e.target.checked)} />
           Actions only
         </label>
         <span className="muted-tx mono">newest first</span>
       </div>
-      <ol className="timeline">
-        {list.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
-      </ol>
-    </div>);
 
+      {groups.length === 0 && (
+        <div style={{padding:"48px 20px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t13)"}}>
+          No entries match this filter.
+        </div>
+      )}
+
+      <div className="tl-date-group">
+        {groups.map(({ date, items }) => (
+          <div key={date}>
+            <div className="tl-date-sep">
+              <span className="tl-date-label mono">{date}</span>
+            </div>
+            <ol className="timeline">
+              {items.map((e, i) => <TimelineItem key={e.id || i} e={e} onEdit={onEdit} onDelete={onDelete} />)}
+            </ol>
+          </div>
+        ))}
+      </div>
+    </div>);
 }
 
 function TimelineItem({ e, onEdit, onDelete }) {
@@ -1333,38 +1579,47 @@ function Audit({ entries = [], tasks = [], files = [] }) {
 }
 
 // ============================================================
-// RIGHT RAIL
+// RIGHT RAIL — with AI at top, team workload, snapshot
 // ============================================================
 function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam, store, tasks=[], blockers=[] }) {
+  const openTasks = tasks.filter(t => t.state !== "Done");
+
+  // Build team workload: for each member, count their open tasks
+  const memberWorkload = team.map(m => {
+    const memberTasks = openTasks.filter(t =>
+      t.owner && (t.owner.toLowerCase().includes(m.name.split(" ")[0].toLowerCase()) ||
+      (m.initials && t.owner.toLowerCase().includes(m.initials.toLowerCase())))
+    );
+    const overdue = memberTasks.filter(t => {
+      if (!t.due || t.due === "—") return false;
+      try { return new Date(t.due + ", " + new Date().getFullYear()) < new Date(); } catch { return false; }
+    });
+    return { ...m, taskCount: memberTasks.length, overdueCount: overdue.length };
+  });
+
   return (
     <aside className="rail">
+      {/* AI — moved to top as primary action */}
       <section className="rail-section">
         <div className="rail-head">
-          <h4>AI summary</h4>
-          <span className="pill pill-accent" style={{fontSize:"10px"}}>coming soon</span>
+          <h4>AI Assistant</h4>
         </div>
-        <div className="ai-coming-soon">
-          <span className="ai-coming-icon"><Icon.spark /></span>
-          <p className="ai-coming-title">Store Intelligence</p>
-          <p className="ai-coming-desc">
-            The AI assistant will automatically summarize each store's health status, surface
-            blockers, flag overdue actions, and answer questions about notes, tasks, and comms —
-            all grounded in real records. Ask things like "What's blocking this store?" or
-            "Draft a status email to the retailer."
-          </p>
-        </div>
-        <button className="btn primary full" onClick={onAskAI}>
+        <button className="btn primary full" onClick={onAskAI} style={{marginBottom:8}}>
           <Icon.spark /> Ask about this store <Kbd>⌘J</Kbd>
         </button>
+        <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",lineHeight:1.5}}>
+          Summarize status, surface blockers, draft emails, answer questions about any note or task.
+        </div>
       </section>
 
+      {/* Snapshot */}
       <section className="rail-section">
         <div className="rail-head"><h4>Snapshot</h4></div>
         {store ? (
           <dl className="kv">
             <dt>Phase</dt><dd className="mono">{store.phase||"—"}</dd>
             <dt>Owner</dt><dd>{store.ownerPerson||store.owner||"—"}</dd>
-            <dt>Next action</dt><dd>{store.nextAction||"—"}</dd>
+            <dt>Next action</dt><dd style={{color:"var(--warn)"}}>{store.nextAction||"—"}</dd>
             <dt>Due</dt><dd className="mono">{store.due||"—"} {store.dueDelta && <span className="muted-tx">· {store.dueDelta}</span>}</dd>
             <dt>Risk</dt><dd><Dot tone={store.risk==="high"?"red":store.risk==="medium"?"yellow":"green"} /> {store.risk?.charAt(0).toUpperCase()+store.risk?.slice(1)||"Low"}</dd>
             <dt>Go-live</dt><dd className="mono">{store.scheduledLive||"—"}</dd>
@@ -1373,47 +1628,69 @@ function RightRail({ onAskAI, flags, onFlag, team = TEAM, onEditTeam, store, tas
         ) : <p className="muted-tx" style={{fontSize:"var(--t12)",padding:"0 0 8px"}}>No store selected</p>}
       </section>
 
+      {/* Flags */}
       <section className="rail-section">
         <div className="rail-head">
           <h4>Flags <span className="muted-tx mono">{flags.length}</span></h4>
           <button className="linkbtn" onClick={onFlag}><Icon.plus /> Raise</button>
         </div>
-        <ul className="flag-list">
-          {flags.map((f, i) =>
-          <li key={i} className="flag-row">
-              <Dot tone={f.tone} />
-              <span className="flag-label">{f.label}</span>
-              <span className="flag-team mono">{f.team}</span>
-              <span className="muted-tx mono">{f.since}</span>
-            </li>
-          )}
-        </ul>
+        {flags.length === 0 ? (
+          <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",padding:"4px 0"}}>No active flags</div>
+        ) : (
+          <ul className="flag-list">
+            {flags.map((f, i) =>
+              <li key={i} className="flag-row">
+                <Dot tone={f.tone} />
+                <span className="flag-label">{f.label}</span>
+                <span className="flag-team mono">{f.team}</span>
+                <span className="muted-tx mono">{f.since}</span>
+              </li>
+            )}
+          </ul>
+        )}
       </section>
 
+      {/* Team — with workload */}
       <section className="rail-section">
         <div className="rail-head">
-          <h4>Team <span className="muted-tx mono">{team.length}</span></h4>
+          <h4>Care Team <span className="muted-tx mono">{team.length}</span></h4>
           <button className="linkbtn" onClick={onEditTeam}><Icon.plus /> Edit</button>
         </div>
-        <ul className="contacts">
-          {team.map((m, i) =>
-          <li key={i} className="contact-row">
-              <span className={cx("avatar avatar-sm mono", "avatar-internal")}>
-                {m.initials}
-              </span>
-              <div className="contact-text">
-                <div className="contact-name">{m.name} {m.load === "primary" && <span className="muted-tx mono">· lead</span>}</div>
-                <div className="contact-sub">{m.role} · <span className="mono muted-tx">{m.team}</span></div>
-              </div>
-              <Pill tone={m.load === "primary" ? "watch" : "info"}>{m.load}</Pill>
-            </li>
-          )}
-        </ul>
+        {team.length === 0 ? (
+          <div style={{fontSize:"var(--t12)",color:"var(--muted-fg)",padding:"4px 0"}}>
+            No team members yet. <button className="linkbtn" onClick={onEditTeam}>Add team</button>
+          </div>
+        ) : (
+          <ul style={{listStyle:"none",padding:0,margin:0}}>
+            {memberWorkload.map((m, i) => (
+              <li key={i} className="team-workload-row">
+                <span className={cx("avatar avatar-sm mono", "avatar-internal")}>{m.initials}</span>
+                <div className="team-member-info">
+                  <div className="team-member-name">
+                    {m.name}
+                    {m.load === "primary" && <span className="muted-tx mono"> · lead</span>}
+                  </div>
+                  <div className="team-member-sub">{m.role} · <span className="mono">{m.team}</span></div>
+                </div>
+                <span className={cx("team-task-count",
+                  m.overdueCount > 0 ? "task-count-overdue" :
+                  m.taskCount > 0   ? "task-count-active" :
+                  "task-count-clear"
+                )}>
+                  {m.taskCount > 0 ? m.taskCount : "✓"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {team.length > 0 && (
+          <div style={{marginTop:6,fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
+            Numbers = open tasks · ✓ = clear · 🔴 = overdue
+          </div>
+        )}
       </section>
     </aside>);
-
 }
-
 // ============================================================
 // AI MODAL (on-demand)
 // ============================================================
@@ -2235,7 +2512,7 @@ function BlockersPanel({ blockers, onAdd, onResolve, storeId, flashToast }) {
 }
 
 // ============================================================
-// TASKS — full featured with drawer + blockers
+// TASKS — kanban + swimlane treatment plan view
 // ============================================================
 function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResolveBlocker, storeId, flashToast, activeUser }) {
   const [newTitle, setNewTitle]   = useState("");
@@ -2243,7 +2520,8 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
   const [newDue,   setNewDue]     = useState("");
   const [newFlag,  setNewFlag]    = useState(false);
   const [activeTask, setActiveTask] = useState(null);
-  const [taskTab, setTaskTab]     = useState("kanban"); // kanban | blockers
+  const [taskTab, setTaskTab]     = useState("kanban");
+  const [viewMode, setViewMode]   = useState("kanban"); // kanban | swimlane
   const [sortTeam, setSortTeam]   = useState("all");
 
   const cols = [
@@ -2262,6 +2540,25 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
     setNewTitle(""); setNewOwner(""); setNewDue(""); setNewFlag(false);
   };
 
+  // Swimlane grouping by phase
+  const swimlaneGroups = PHASES.map(p => ({
+    phase: p,
+    tasks: filtered.filter(t => {
+      // Associate task with phase by keyword matching or fall back to "unphased"
+      const title = (t.title || "").toLowerCase();
+      if (p === "Planning")    return title.includes("plan") || title.includes("msa") || title.includes("scope") || title.includes("kick");
+      if (p === "Scheduled")   return title.includes("survey") || title.includes("planogram") || title.includes("install date") || title.includes("schedule");
+      if (p === "COI")         return title.includes("coi") || title.includes("permit") || title.includes("circuit") || title.includes("insurance");
+      if (p === "Deployment")  return title.includes("deploy") || title.includes("install") || title.includes("walkthrough") || title.includes("crew") || title.includes("shipping");
+      if (p === "Live")        return title.includes("live") || title.includes("go-live") || title.includes("handoff") || title.includes("week-1") || title.includes("performance");
+      return false;
+    }),
+  })).filter(g => g.tasks.length > 0);
+  // Add unphased tasks
+  const phasedTaskIds = new Set(swimlaneGroups.flatMap(g => g.tasks.map(t => t.id)));
+  const unphasedTasks = filtered.filter(t => !phasedTaskIds.has(t.id));
+  if (unphasedTasks.length > 0) swimlaneGroups.push({ phase: "Other", tasks: unphasedTasks });
+
   return (
     <div className="tasks">
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
@@ -2270,8 +2567,18 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
             <button key={t.id} className={cx("tab", taskTab===t.id && "is-active")} style={{height:30}} onClick={() => setTaskTab(t.id)}>{t.label}</button>
           ))}
         </div>
-        <div className="grow" />
         {taskTab === "kanban" && (
+          <div className="task-view-toggle" style={{marginLeft:4}}>
+            <button className={cx("task-view-btn", viewMode==="kanban" && "is-on")} onClick={() => setViewMode("kanban")}>
+              Board
+            </button>
+            <button className={cx("task-view-btn", viewMode==="swimlane" && "is-on")} onClick={() => setViewMode("swimlane")}>
+              Treatment Plan
+            </button>
+          </div>
+        )}
+        <div className="grow" />
+        {taskTab === "kanban" && viewMode === "kanban" && (
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
             {allOwners.map((o) => (
               <button key={o} className={cx("chip", sortTeam===o && "is-on")} onClick={() => setSortTeam(o)}>
@@ -2295,46 +2602,105 @@ function Tasks({ tasks, onCreate, onStateChange, blockers, onAddBlocker, onResol
             <button className="btn primary" type="submit" disabled={!newTitle.trim()}><Icon.plus /> Add task</button>
           </form>
 
-          <div className="task-cols">
-            {cols.map((c) => {
-              const items = filtered.filter((t) => t.state === c.id);
-              return (
-                <div key={c.id} className="task-col">
-                  <div className="task-col-head">
-                    <Dot tone={c.tone==="ok"?"green":c.tone==="watch"?"yellow":"neutral"} />
-                    <span>{c.id}</span>
-                    <span className="mono task-col-n">{items.length}</span>
+          {viewMode === "kanban" ? (
+            <div className="task-cols">
+              {cols.map((c) => {
+                const items = filtered.filter((t) => t.state === c.id);
+                return (
+                  <div key={c.id} className="task-col">
+                    <div className="task-col-head">
+                      <Dot tone={c.tone==="ok"?"green":c.tone==="watch"?"yellow":"neutral"} />
+                      <span>{c.id}</span>
+                      <span className="mono task-col-n">{items.length}</span>
+                    </div>
+                    {items.length === 0 && (
+                      <div style={{padding:"20px 10px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t12)",border:"1px dashed var(--border)",borderRadius:"var(--radius)",margin:"4px 0"}}>
+                        No {c.id.toLowerCase()} tasks
+                      </div>
+                    )}
+                    {items.map((t) => (
+                      <div key={t.id} className={cx("task-card", t.flag==="blocker" && "is-blocker")}
+                        onClick={() => setActiveTask(t)} style={{cursor:"pointer"}}>
+                        <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
+                          <span className="mono task-id" style={{fontSize:"var(--t11)",color:"var(--muted-fg)",flexShrink:0,paddingTop:1}}>{t.id}</span>
+                          {t.flag && <Pill tone="blocker" style={{flexShrink:0,fontSize:10}}>blocker</Pill>}
+                        </div>
+                        <div className="task-card-title" style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)",lineHeight:1.4,marginBottom:8}}>{t.title}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:6,fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
+                          <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
+                          <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.owner||"Unassigned"}</span>
+                          <span className="mono" style={{flexShrink:0}}>{t.due}</span>
+                        </div>
+                        <div className="task-card-actions" onClick={(e)=>e.stopPropagation()}>
+                          {c.id!=="Open"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Open")}>Open</button>}
+                          {c.id!=="Waiting" && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Waiting")}>Waiting</button>}
+                          {c.id!=="Done"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Done")}>Done</button>}
+                          <button className="btn ghost sm" onClick={()=>setActiveTask(t)}><Icon.paper /> Notes</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {items.length === 0 && (
-                    <div style={{padding:"20px 10px",textAlign:"center",color:"var(--muted-fg)",fontSize:"var(--t12)",border:"1px dashed var(--border)",borderRadius:"var(--radius)",margin:"4px 0"}}>
-                      No {c.id.toLowerCase()} tasks
-                    </div>
-                  )}
-                  {items.map((t) => (
-                    <div key={t.id} className={cx("task-card", t.flag==="blocker" && "is-blocker")}
-                      onClick={() => setActiveTask(t)} style={{cursor:"pointer"}}>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
-                        <span className="mono task-id" style={{fontSize:"var(--t11)",color:"var(--muted-fg)",flexShrink:0,paddingTop:1}}>{t.id}</span>
-                        {t.flag && <Pill tone="blocker" style={{flexShrink:0,fontSize:10}}>blocker</Pill>}
+                );
+              })}
+            </div>
+          ) : (
+            /* Treatment Plan / Swimlane view */
+            <div className="swimlanes">
+              {/* Show blockers surfaced at top */}
+              {filtered.filter(t => t.flag === "blocker" && t.state !== "Done").length > 0 && (
+                <div className={cx("swimlane", "swimlane-blocked")}>
+                  <div className="swimlane-head">
+                    <Dot tone="red" />
+                    <span className="swimlane-phase-name">🚨 Active Blockers</span>
+                    <span className="swimlane-meta">{filtered.filter(t=>t.flag==="blocker"&&t.state!=="Done").length} task{filtered.filter(t=>t.flag==="blocker"&&t.state!=="Done").length!==1?"s":""} need immediate attention</span>
+                  </div>
+                  <div className="swimlane-items">
+                    {filtered.filter(t => t.flag === "blocker" && t.state !== "Done").map(t => (
+                      <div key={t.id} className="swimlane-task is-blocker" onClick={() => setActiveTask(t)}>
+                        <span className="mono task-id" style={{flexShrink:0}}>{t.id}</span>
+                        <Pill tone="blocker" style={{flexShrink:0}}>blocker</Pill>
+                        <span className="swimlane-task-title">{t.title}</span>
+                        <span className="avatar avatar-xs mono" style={{flexShrink:0}}>{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
+                        <span className="muted-tx mono" style={{flexShrink:0,fontSize:"var(--t12)"}}>{t.due}</span>
+                        <Pill tone="watch" style={{flexShrink:0}}>{t.state}</Pill>
                       </div>
-                      <div className="task-card-title" style={{fontSize:"var(--t13)",fontWeight:500,color:"var(--fg)",lineHeight:1.4,marginBottom:8}}>{t.title}</div>
-                      <div style={{display:"flex",alignItems:"center",gap:6,fontSize:"var(--t12)",color:"var(--muted-fg)"}}>
-                        <span className="avatar avatar-xs mono">{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
-                        <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.owner||"Unassigned"}</span>
-                        <span className="mono" style={{flexShrink:0}}>{t.due}</span>
-                      </div>
-                      <div className="task-card-actions" onClick={(e)=>e.stopPropagation()}>
-                        {c.id!=="Open"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Open")}>Open</button>}
-                        {c.id!=="Waiting" && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Waiting")}>Waiting</button>}
-                        {c.id!=="Done"    && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Done")}>Done</button>}
-                        <button className="btn ghost sm" onClick={()=>setActiveTask(t)}><Icon.paper /> Notes</button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              )}
+              {swimlaneGroups.map(({phase, tasks: pTasks}) => {
+                const done = pTasks.filter(t => t.state === "Done").length;
+                const hasBlocker = pTasks.some(t => t.flag === "blocker" && t.state !== "Done");
+                return (
+                  <div key={phase} className={cx("swimlane", hasBlocker && "swimlane-blocked")}>
+                    <div className="swimlane-head">
+                      <Dot tone={hasBlocker?"red":done===pTasks.length?"green":"neutral"} />
+                      <span className="swimlane-phase-name">{phase}</span>
+                      <span className="swimlane-meta mono">{done}/{pTasks.length} done</span>
+                      <div style={{marginLeft:"auto",display:"flex",gap:4}}>
+                        {hasBlocker && <Pill tone="blocker">blocked</Pill>}
+                      </div>
+                    </div>
+                    <div className="swimlane-items">
+                      {pTasks.map(t => (
+                        <div key={t.id} className={cx("swimlane-task", t.state==="Done" && "is-done", t.flag==="blocker" && t.state!=="Done" && "is-blocker")} onClick={() => setActiveTask(t)}>
+                          <span className="mono task-id" style={{flexShrink:0}}>{t.id}</span>
+                          <span className="swimlane-task-title">{t.title}</span>
+                          <span className="avatar avatar-xs mono" style={{flexShrink:0}}>{(t.owner||"?").split(" ").map(s=>s[0]).join("")}</span>
+                          <span className="muted-tx mono" style={{flexShrink:0,fontSize:"var(--t12)"}}>{t.due}</span>
+                          <Pill tone={t.state==="Done"?"info":t.state==="Waiting"?"watch":"info"} style={{flexShrink:0}}>{t.state}</Pill>
+                          <div onClick={e=>e.stopPropagation()} style={{display:"flex",gap:3,flexShrink:0}}>
+                            {t.state!=="Done" && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Done")}>Done</button>}
+                            {t.state==="Done" && <button className="btn ghost sm" onClick={()=>onStateChange(t.id,"Open")}>Reopen</button>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
 
@@ -2460,7 +2826,7 @@ function LeftNav({ stores=[], allTasks=[], allFlags=[], allBlockers=[], onAddSto
             className={cx("nav-item nav-store", s.id===activeStoreId && navView==="store" && "is-active")}
             onClick={() => onSelectStore(s)}
             style={{gap:6}}>
-            <Dot tone={s.health||"neutral"} />
+            <div className={`nav-store-health-bar nav-store-health-bar-${s.health||"neutral"}`} />
             <span className="mono nav-store-id" style={{flex:1,fontSize:"var(--t12)"}}>{s.id}</span>
             <button className="nav-store-delete iconbtn xs"
               title="Delete store"
@@ -3854,7 +4220,8 @@ function App() {
           <StoreHeader store={storeData} tweaks={tweaks}
             onNewNote={goToNotes} onFlag={() => setFlagOpen(true)}
             onPhaseSelect={setPhaseOpen} onEdit={() => setEditStoreOpen(true)}
-            onShowAll={() => { setActiveStoreId(null); activeStoreIdRef.current=null; setStoreData(null); setNavView("store"); }} />
+            onShowAll={() => { setActiveStoreId(null); activeStoreIdRef.current=null; setStoreData(null); setNavView("store"); }}
+            tasks={liveTasks} flags={liveFlags} blockers={blockers} />
         )}
         {isStoreView && <TabBar active={tab} onSelect={setTab} counts={{
   timeline: entries.length,
@@ -3862,7 +4229,7 @@ function App() {
   tasks: liveTasks.filter((t) => t.state!=="Done").length,
   comms: entries.filter((e) => e.kind==="comm").length,
   files: liveFiles.length,
-}} />}
+}} tasks={liveTasks} flags={liveFlags} />}
 
         {!SB.configured() && (
           <div className="config-banner">
@@ -3906,10 +4273,6 @@ function App() {
           )}
         </div>
       </main>
-
-      <button className={cx("ai-fab", aiOpen && "is-open")} onClick={() => setAiOpen((o) => !o)} title="Ask AI (⌘J)">
-        <Icon.spark /><span>Ask AI</span><Kbd>⌘J</Kbd>
-      </button>
 
       <AIModal open={aiOpen} onClose={() => setAiOpen(false)} />
       <ImportCSVModal open={importOpen} onClose={() => setImportOpen(false)} existingStores={allStores} onImport={(stores) => { stores.forEach(addStore); setImportOpen(false); flashToast(`${stores.length} store(s) imported`); }} />

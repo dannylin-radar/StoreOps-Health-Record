@@ -1656,3 +1656,13 @@ html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
   font-size: var(--t12); font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--muted-fg);
 }
+
+/* ── PHASE DRAWER ITEM ACTIONS ───────────────────────────── */
+.drawer-checklist .check-row:hover .drawer-item-actions { opacity: 1 !important; }
+.drawer-item-actions { transition: opacity .15s; }
+.drawer-checklist .check-row {
+  grid-template-columns: 18px 28px 1fr auto auto auto;
+}
+
+/* ── NAV SORT TOGGLE ─────────────────────────────────────── */
+.nav-count-blocker { color: var(--bad) !important; font-weight: 700; }
